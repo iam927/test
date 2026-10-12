@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 4 - DNS &amp; DHCP | The Way of Dreams</title>
+  <meta name="description" content="Day 4 notes: DNS resolution, DNS records, DHCP DORA process, DHCP scopes, reservations, relay, APIPA, and practical Windows troubleshooting commands." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .net-diagram { background:var(--dark); border-radius:var(--radius-md); padding:22px 24px; margin:14px 0; font-family:'Fira Code','Courier New',monospace; font-size:0.83rem; color:var(--soft); line-height:1.9; border:1px solid rgba(112,145,230,0.2); overflow-x:auto; white-space:pre; }
+    .toc-card { background:linear-gradient(135deg,rgba(61,82,160,0.07),rgba(112,145,230,0.12)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; }
+    .toc-card h3 { font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+    .toc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
+    .toc-list li a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:7px; transition:var(--transition); padding:3px 0; }
+    .toc-list li a:hover { color:var(--primary); padding-left:4px; }
+    .toc-list li a .toc-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-size:0.68rem; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    @media(max-width:600px){ .toc-list{grid-template-columns:1fr;} }
+    .section-anchor { scroll-margin-top:90px; }
+    .dns-flow { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .dns-node { background:linear-gradient(135deg,rgba(61,82,160,0.1),rgba(112,145,230,0.18)); border:1.5px solid rgba(112,145,230,0.35); border-radius:var(--radius-md); padding:13px 36px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.88rem; color:var(--primary); text-align:center; min-width:220px; }
+    .dns-node.green { background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(74,222,128,0.14)); border-color:rgba(74,222,128,0.35); color:#16a34a; }
+    .dns-arrow { font-size:1.3rem; color:var(--secondary); margin:3px 0; line-height:1; }
+    .dns-arrow-label { font-size:0.76rem; color:var(--secondary); background:rgba(112,145,230,0.1); padding:3px 13px; border-radius:99px; margin:1px 0; font-weight:600; }
+    .dora-steps { display:flex; flex-direction:column; gap:12px; margin:16px 0; }
+    .dora-step { display:flex; align-items:flex-start; gap:16px; padding:16px 20px; background:white; border-radius:var(--radius-md); border:1.5px solid rgba(173,187,218,0.35); transition:border-color 0.2s; }
+    .dora-step:hover { border-color:var(--secondary); }
+    .dora-letter { width:42px; height:42px; min-width:42px; background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border-radius:var(--radius-md); font-family:'Outfit',sans-serif; font-weight:900; font-size:1.3rem; display:flex; align-items:center; justify-content:center; }
+    .dora-step-body h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.9rem; margin:0 0 4px; }
+    .dora-step-body p { font-size:0.84rem; color:var(--text-muted); margin:0; line-height:1.6; }
+    .dora-wrap { display:grid; grid-template-columns:1fr 1fr; gap:0; margin:20px 0; border-radius:var(--radius-lg); overflow:hidden; border:1.5px solid rgba(112,145,230,0.3); }
+    .dora-col-header { padding:14px 20px; font-family:'Outfit',sans-serif; font-weight:800; font-size:0.9rem; text-align:center; }
+    .dora-col-header.client { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+    .dora-col-header.server { background:linear-gradient(135deg,#16a34a,#4ade80); color:white; }
+    .dora-grid-body { display:contents; }
+    .dora-msg-row { display:contents; }
+    .dora-msg-cell { padding:12px 16px; background:var(--lightest); font-size:0.84rem; color:var(--text-muted); border-bottom:1px solid rgba(173,187,218,0.2); }
+    .dora-msg-cell.highlight { color:var(--primary); font-weight:600; font-family:'Outfit',sans-serif; }
+    .dora-msg-cell.highlight.green { color:#16a34a; }
+    .dora-footer { grid-column:1/-1; background:rgba(74,222,128,0.07); padding:12px 20px; border-top:1.5px solid rgba(74,222,128,0.2); font-family:'Outfit',sans-serif; font-weight:700; color:#16a34a; font-size:0.88rem; }
+    .dns-records-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.86rem; border-radius:var(--radius-md); overflow:hidden; }
+    .dns-records-table thead tr { background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+    .dns-records-table thead th { padding:12px 16px; color:white; font-family:'Outfit',sans-serif; font-weight:700; text-align:left; }
+    .dns-records-table tbody tr { border-bottom:1px solid rgba(173,187,218,0.3); transition:background 0.18s; }
+    .dns-records-table tbody tr:hover { background:rgba(112,145,230,0.05); }
+    .dns-records-table tbody td { padding:11px 16px; color:var(--text-muted); }
+    .dns-records-table tbody td:first-child { font-family:'Fira Code',monospace; font-weight:700; color:var(--primary); }
+    .chain { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .chain-item { padding:11px 32px; border-radius:var(--radius-md); font-family:'Outfit',sans-serif; font-weight:700; font-size:0.85rem; text-align:center; min-width:220px; background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.15)); border:1.5px solid rgba(112,145,230,0.3); color:var(--primary); }
+    .chain-item.green { background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(74,222,128,0.14)); border-color:rgba(74,222,128,0.35); color:#16a34a; }
+    .chain-arrow { font-size:1.2rem; color:var(--secondary); line-height:1; margin:2px 0; }
+    .chain-label { font-size:0.72rem; color:var(--steel); font-weight:600; margin-bottom:2px; font-family:'Outfit',sans-serif; }
+    .cmd-group { display:flex; flex-direction:column; gap:10px; margin:14px 0; }
+    .cmd-item { background:var(--dark); border-radius:var(--radius-md); padding:14px 20px; border:1px solid rgba(112,145,230,0.2); }
+    .cmd-label { font-size:0.74rem; color:var(--steel); font-weight:600; margin-bottom:6px; font-family:'Outfit',sans-serif; text-transform:uppercase; letter-spacing:0.05em; }
+    .cmd-code { font-family:'Fira Code',monospace; font-size:0.88rem; color:#4ade80; }
+    .iq-section h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--primary); font-size:0.9rem; margin:18px 0 8px; }
+    .iq-list { list-style:none; display:flex; flex-direction:column; gap:8px; counter-reset:iq-counter; padding:0; }
+    .iq-list li { counter-increment:iq-counter; background:var(--lightest); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 16px 10px 46px; font-size:0.88rem; color:var(--text-muted); position:relative; }
+    .iq-list li::before { content:"Q" counter(iq-counter); position:absolute; left:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.72rem; color:var(--secondary); top:50%; transform:translateY(-50%); }
+    .lab-block { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-lg); padding:24px; margin-bottom:16px; }
+    .lab-block-title { font-family:'Outfit',sans-serif; font-weight:700; font-size:0.95rem; color:var(--primary); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:14px 0; }
+    .cheat-col { background:var(--dark); border-radius:var(--radius-lg); padding:22px 24px; border:1px solid rgba(112,145,230,0.2); }
+    .cheat-col h4 { font-family:'Outfit',sans-serif; font-weight:800; color:var(--secondary); font-size:0.95rem; margin-bottom:14px; }
+    .cheat-col ul { list-style:none; display:flex; flex-direction:column; gap:7px; padding:0; }
+    .cheat-col li { font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--soft); padding-left:16px; position:relative; }
+    .cheat-col li::before { content:'&rsaquo;'; position:absolute; left:0; color:var(--secondary); font-weight:700; }
+    .scenario-list { display:flex; flex-direction:column; gap:14px; margin:14px 0; }
+    .scenario-card { background:white; border-radius:var(--radius-lg); border:1.5px solid rgba(173,187,218,0.4); padding:20px 24px; }
+    .scenario-card .sc-num { font-family:'Outfit',sans-serif; font-weight:800; font-size:0.78rem; color:var(--secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+    .scenario-card .sc-q { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.92rem; margin-bottom:8px; }
+    .scenario-card .sc-hint { font-size:0.84rem; color:var(--text-muted); background:rgba(112,145,230,0.07); border-radius:var(--radius-sm); padding:8px 14px; border-left:3px solid var(--secondary); }
+    .proto-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:16px 0; }
+    .proto-card { border-radius:var(--radius-lg); padding:24px; }
+    .proto-card.blue { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.14)); border:2px solid rgba(112,145,230,0.35); }
+    .proto-card.green-c { background:linear-gradient(135deg,rgba(22,163,74,0.06),rgba(74,222,128,0.12)); border:2px solid rgba(74,222,128,0.3); }
+    .proto-card h3 { font-family:'Outfit',sans-serif; font-weight:800; font-size:1rem; margin-bottom:12px; }
+    .proto-card.blue h3 { color:var(--primary); }
+    .proto-card.green-c h3 { color:#16a34a; }
+    .proto-card p { font-size:0.84rem; color:var(--text-muted); line-height:1.6; }
+    @media(max-width:640px){ .cheat-grid{grid-template-columns:1fr;} .proto-grid{grid-template-columns:1fr;} .dora-wrap{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- BACK BAR -->
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <!-- DAY HERO -->
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128218; Day 4 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">DNS &amp; DHCP</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 4 of the journey</span>
+        <span>&#9203; ~75 min read</span>
+        <span>&#127891; Theory + 5 Labs</span>
+        <span>&#128100; 28 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">DNS</span>
+        <span class="day-tag">DHCP</span>
+        <span class="day-tag">DORA</span>
+        <span class="day-tag">DNS Records</span>
+        <span class="day-tag">APIPA</span>
+        <span class="day-tag">DNS Cache</span>
+        <span class="day-tag">DHCP Relay</span>
+        <span class="day-tag">nslookup</span>
+        <span class="day-tag">ipconfig</span>
+        <span class="day-tag">Troubleshooting</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE LAYOUT -->
+  <div class="container">
+    <div class="note-layout">
+
+      <main class="note-main">
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents &mdash; Day 4</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>What is DNS?</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>Why DNS?</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>DNS Resolution</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>DNS Cache &amp; Flush</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>DNS Records</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>Forward vs Reverse Lookup</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>DNS Port &amp; Protocol</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>DNS Troubleshooting</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>What is DHCP?</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>DHCP DORA Process</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>DHCP Lease &amp; Scope</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Exclusions &amp; Reservations</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>Static vs DHCP &amp; Relay</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>APIPA &amp; Troubleshooting</a></li>
+            <li><a href="#s15"><span class="toc-num">15</span>DNS + DHCP Together</a></li>
+            <li><a href="#s16"><span class="toc-num">16</span>Day 1 to 4 Connection</a></li>
+            <li><a href="#labs"><span class="toc-num">&#128299;</span>5 Practical Labs</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>28 Interview Questions</a></li>
+            <li><a href="#challenge"><span class="toc-num">&#129504;</span>Day 4 Challenge</a></li>
+            <li><a href="#summary"><span class="toc-num">&#11088;</span>Cheat Sheet</a></li>
+          </ul>
+        </div>
+
+        <!-- PART 1 BANNER -->
+                <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day4">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 4 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">DNS & DHCP Fundamentals</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 8 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain what DNS does and why human-readable names need IP translation</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Name and describe all 7 core DNS records (A, AAAA, CNAME, MX, NS, TXT, PTR)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Trace recursive DNS resolution: Root &rarr; TLD &rarr; Authoritative</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Inspect and clear DNS cache using ipconfig /displaydns and /flushdns</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain what DHCP is and detail the 4-step DORA process</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Differentiate DHCP Scope, Lease time, and MAC Reservation</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Identify an APIPA address (169.254.0.0/16) and know its cause</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Troubleshoot client IP configuration with ipconfig /release and /renew</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 4 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>What is Next &mdash; Day 5:</strong> Ethernet Switching, MAC address tables, VLANs, access and trunk ports, and inter-VLAN communication. This directly maps to your real work with switches, APs, and VLANs.</div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- SIDEBAR -->
+      <aside class="note-sidebar">
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 4 Progress</div>
+          <div>
+            <div class="progress-item"><span>Topics</span><span style="color:var(--primary);font-weight:600;">16 sections</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Labs</span><span style="color:#16a34a;font-weight:600;">5 labs &#128299;</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Phase 1 Overall</span><span style="color:var(--primary);font-weight:600;">~40%</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="40" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; Quick Reference</div>
+          <ul class="key-terms-list">
+            <li><strong>DNS</strong> Name &rarr; IP</li>
+            <li><strong>A</strong> Hostname &rarr; IPv4</li>
+            <li><strong>AAAA</strong> Hostname &rarr; IPv6</li>
+            <li><strong>CNAME</strong> Alias &rarr; hostname</li>
+            <li><strong>MX</strong> Mail server</li>
+            <li><strong>PTR</strong> IP &rarr; hostname</li>
+            <li><strong>DHCP</strong> Auto-config</li>
+            <li><strong>DORA</strong> D&rarr;O&rarr;R&rarr;A</li>
+            <li><strong>APIPA</strong> 169.254.x.x</li>
+            <li><strong>Relay</strong> Cross-subnet DHCP</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128260; DORA</div>
+          <div style="text-align:center;padding:12px;background:var(--lightest);border-radius:var(--radius-md);">
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">Discover</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">Offer</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">Request</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">Acknowledge</div>
+            <div style="color:#16a34a;font-size:0.75rem;margin-top:8px;font-weight:600;">Config Assigned &#9989;</div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128297; Key Ports</div>
+          <ul class="key-terms-list">
+            <li><strong>53/UDP</strong> DNS (common)</li>
+            <li><strong>53/TCP</strong> DNS (zone xfer)</li>
+            <li><strong>67/UDP</strong> DHCP Server</li>
+            <li><strong>68/UDP</strong> DHCP Client</li>
+            <li><strong>80</strong> HTTP</li>
+            <li><strong>443</strong> HTTPS</li>
+            <li><strong>22</strong> SSH</li>
+            <li><strong>3389</strong> RDP</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="day3.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8592; Day 3: ARP, ICMP, TCP/UDP
+            </a>
+            <a href="day5.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8594; Day 5: Ethernet &amp; VLANs
+            </a>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon">&#9729;</span>
+          <span>The Way of <strong>Dreams</strong></span>
+        </div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+

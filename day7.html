@@ -1,0 +1,443 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 7 - VLAN &amp; Inter-VLAN Routing Practical | The Way of Dreams</title>
+  <meta name="description" content="Day 7 practical notes: complete VLAN and inter-VLAN routing configuration, Router-on-a-Stick subinterfaces, packet flow step-by-step, troubleshooting guide and Cisco commands." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .net-diagram { background:var(--dark); border-radius:var(--radius-md); padding:22px 24px; margin:14px 0; font-family:'Fira Code','Courier New',monospace; font-size:0.83rem; color:var(--soft); line-height:1.9; border:1px solid rgba(112,145,230,0.2); overflow-x:auto; white-space:pre; }
+    .toc-card { background:linear-gradient(135deg,rgba(61,82,160,0.07),rgba(112,145,230,0.12)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; }
+    .toc-card h3 { font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+    .toc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; padding:0; }
+    .toc-list li a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:7px; transition:var(--transition); padding:3px 0; }
+    .toc-list li a:hover { color:var(--primary); padding-left:4px; }
+    .toc-list li a .toc-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-size:0.68rem; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    @media(max-width:600px){ .toc-list{grid-template-columns:1fr;} }
+    .section-anchor { scroll-margin-top:90px; }
+    .cmd-group { display:flex; flex-direction:column; gap:10px; margin:14px 0; }
+    .cmd-item { background:var(--dark); border-radius:var(--radius-md); padding:14px 20px; border:1px solid rgba(112,145,230,0.2); }
+    .cmd-label { font-size:0.74rem; color:var(--steel); font-weight:600; margin-bottom:6px; font-family:'Outfit',sans-serif; text-transform:uppercase; letter-spacing:0.05em; }
+    .cmd-code { font-family:'Fira Code',monospace; font-size:0.88rem; color:#4ade80; }
+    .cmd-code.multi { white-space:pre; line-height:1.8; }
+    .chain { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .chain-item { padding:11px 32px; border-radius:var(--radius-md); font-family:'Outfit',sans-serif; font-weight:700; font-size:0.85rem; text-align:center; min-width:220px; background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.15)); border:1.5px solid rgba(112,145,230,0.3); color:var(--primary); }
+    .chain-item.green { background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(74,222,128,0.14)); border-color:rgba(74,222,128,0.35); color:#16a34a; }
+    .chain-arrow { font-size:1.2rem; color:var(--secondary); line-height:1; margin:2px 0; }
+    .chain-label { font-size:0.72rem; color:var(--steel); font-weight:600; margin-bottom:2px; font-family:'Outfit',sans-serif; }
+    .step-list { display:flex; flex-direction:column; gap:0; margin:14px 0; }
+    .step-item { display:flex; align-items:flex-start; gap:16px; padding:14px 18px; background:white; border:1.5px solid rgba(173,187,218,0.35); border-top:none; }
+    .step-item:first-child { border-top:1.5px solid rgba(173,187,218,0.35); border-radius:var(--radius-md) var(--radius-md) 0 0; }
+    .step-item:last-child { border-radius:0 0 var(--radius-md) var(--radius-md); }
+    .step-item:hover { background:rgba(112,145,230,0.03); }
+    .step-num { width:30px; height:30px; min-width:30px; background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border-radius:50%; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
+    .step-body h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.9rem; margin:0 0 4px; }
+    .step-body p { font-size:0.84rem; color:var(--text-muted); line-height:1.6; margin:0; }
+    .step-body code { font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--primary); }
+    .config-block { background:var(--dark); border-radius:var(--radius-lg); border:1px solid rgba(112,145,230,0.2); margin:14px 0; overflow:hidden; }
+    .config-header { background:linear-gradient(135deg,var(--primary),var(--secondary)); padding:10px 18px; font-family:'Outfit',sans-serif; font-weight:700; color:white; font-size:0.85rem; display:flex; align-items:center; gap:8px; }
+    .config-body { padding:18px 20px; font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--soft); line-height:1.9; white-space:pre; overflow-x:auto; }
+    .trouble-block { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-lg); padding:20px 24px; margin:10px 0; }
+    .trouble-title { font-family:'Outfit',sans-serif; font-weight:700; color:var(--primary); font-size:0.9rem; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+    .iq-list { list-style:none; display:flex; flex-direction:column; gap:8px; counter-reset:iq-counter; padding:0; }
+    .iq-list li { counter-increment:iq-counter; background:var(--lightest); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 16px 10px 46px; font-size:0.88rem; color:var(--text-muted); position:relative; }
+    .iq-list li::before { content:"Q" counter(iq-counter); position:absolute; left:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.72rem; color:var(--secondary); top:50%; transform:translateY(-50%); }
+    .iq-answer { background:rgba(112,145,230,0.07); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:8px 14px; font-size:0.84rem; color:var(--text-muted); margin-top:4px; margin-bottom:6px; }
+    .quick-pairs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+    .qp { background:var(--lightest); border-radius:var(--radius-md); padding:16px 18px; border-left:3px solid var(--secondary); }
+    .qp-top { font-family:'Fira Code',monospace; font-size:0.85rem; color:var(--primary); font-weight:700; }
+    .qp-arrow { color:var(--secondary); font-size:0.9rem; margin:3px 0; }
+    .qp-bot { font-family:'Outfit',sans-serif; font-size:0.82rem; color:var(--text-muted); font-weight:600; }
+    @media(max-width:540px){ .quick-pairs{grid-template-columns:1fr;} }
+    .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:14px 0; }
+    .cheat-col { background:var(--dark); border-radius:var(--radius-lg); padding:22px 24px; border:1px solid rgba(112,145,230,0.2); }
+    .cheat-col h4 { font-family:'Outfit',sans-serif; font-weight:800; color:var(--secondary); font-size:0.95rem; margin-bottom:14px; }
+    .cheat-col ul { list-style:none; display:flex; flex-direction:column; gap:7px; padding:0; }
+    .cheat-col li { font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--soft); padding-left:16px; position:relative; }
+    .cheat-col li::before { content:'›'; position:absolute; left:0; color:var(--secondary); font-weight:700; }
+    @media(max-width:640px){ .cheat-grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128299; Day 7 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">VLAN &amp; Inter-VLAN Routing<br/>Practical Notes</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 7 of the journey</span>
+        <span>&#9203; ~70 min read</span>
+        <span>&#128268; Full Config Walkthroughs</span>
+        <span>&#128100; 7 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">VLAN Config</span>
+        <span class="day-tag">Access Port Config</span>
+        <span class="day-tag">Trunk Config</span>
+        <span class="day-tag">Router-on-a-Stick</span>
+        <span class="day-tag">Subinterfaces</span>
+        <span class="day-tag">Packet Flow</span>
+        <span class="day-tag">Testing</span>
+        <span class="day-tag">Troubleshooting</span>
+        <span class="day-tag">Cisco Commands</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="note-layout">
+      <main class="note-main">
+
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents &mdash; Day 7</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>VLAN Communication</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>Example Network</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>Creating VLANs</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>Access Port Config</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>Trunk Port Config</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>Router-on-a-Stick</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>Subinterface VLAN 10</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>Subinterface VLAN 20</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>Physical Interface</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>Complete Config</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>Packet Flow</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Testing</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>Verification Commands</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>Troubleshooting</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>7 Interview Questions</a></li>
+            <li><a href="#summary"><span class="toc-num">&#11088;</span>Final Concept</a></li>
+          </ul>
+        </div>
+
+        <!-- S1 -->
+        <div class="note-block section-anchor" id="s1">
+          <h2 class="block-title"><span class="block-icon">&#127760;</span>1. VLAN Communication</h2>
+          <p>A VLAN creates a separate Layer-2 broadcast domain. Devices in different VLANs <strong>and different IP subnets</strong> require a Layer-3 device to communicate.</p>
+          <div class="net-diagram">VLAN 10 / 192.168.10.0/24         VLAN 20 / 192.168.20.0/24
+         |                                   |
+        PC1                                 PC2
+
+Layer-2 switch alone: PC1 cannot reach PC2
+Layer-3 device required: Inter-VLAN Routing</div>
+          <div class="chain">
+            <div class="chain-item">VLAN 10</div>
+            <div class="chain-arrow">&#8595;</div>
+            <div class="chain-item">&#128268; Switch</div>
+            <div class="chain-arrow">&#8595;</div>
+            <div class="chain-item">&#128260; Router / L3 Switch</div>
+            <div class="chain-arrow">&#8595;</div>
+            <div class="chain-item">&#128268; Switch</div>
+            <div class="chain-arrow">&#8595;</div>
+            <div class="chain-item green">VLAN 20 &#9989;</div>
+          </div>
+        </div>
+
+        <!-- S2 -->
+        <div class="note-block section-anchor" id="s2">
+          <h2 class="block-title"><span class="block-icon">&#127968;</span>2. Example Network</h2>
+          <div class="net-diagram">              ROUTER
+                 |
+               TRUNK
+                 |
+               SWITCH
+              /      \
+            PC1      PC2
+         VLAN 10    VLAN 20</div>
+          <div class="concept-grid" style="margin-top:16px;">
+            <div class="concept-card">
+              <div class="cc-icon">&#128187;</div>
+              <div class="cc-title">PC1 (VLAN 10)</div>
+              <div class="cc-desc"><code>IP:      192.168.10.10</code><br/><code>Mask:    255.255.255.0</code><br/><code>Gateway: 192.168.10.1</code></div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128187;</div>
+              <div class="cc-title">PC2 (VLAN 20)</div>
+              <div class="cc-desc"><code>IP:      192.168.20.10</code><br/><code>Mask:    255.255.255.0</code><br/><code>Gateway: 192.168.20.1</code></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- S3 -->
+        <div class="note-block section-anchor" id="s3">
+          <h2 class="block-title"><span class="block-icon">&#128268;</span>3. Creating VLANs (Switch)</h2>
+          <div class="config-block">
+            <div class="config-header">&#128268; Switch Configuration &mdash; Create VLANs</div>
+            <div class="config-body">vlan 10
+ name USERS
+
+vlan 20
+ name IT</div>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-item">
+              <div class="cmd-label">Verify</div>
+              <div class="cmd-code">show vlan brief</div>
+            </div>
+          </div>
+          <div class="callout callout-note">
+            <span class="callout-icon">&#128204;</span>
+            <div>VLANs must be created before they can be assigned to ports. <code>show vlan brief</code> confirms the VLAN exists and shows which ports are assigned to it.</div>
+          </div>
+        </div>
+
+        <!-- S4 -->
+        <div class="note-block section-anchor" id="s4">
+          <h2 class="block-title"><span class="block-icon">&#128268;</span>4. Configuring Access Ports (Switch)</h2>
+          <div class="config-block">
+            <div class="config-header">&#128268; Switch Configuration &mdash; Access Ports</div>
+            <div class="config-body">! PC1 connected to Fa0/1
+interface fa0/1
+ switchport mode access
+ switchport access vlan 10
+
+! PC2 connected to Fa0/2
+interface fa0/2
+ switchport mode access
+ switchport access vlan 20</div>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-item">
+              <div class="cmd-label">Verify access port assignments</div>
+              <div class="cmd-code">show vlan brief</div>
+            </div>
+          </div>
+          <p style="font-size:0.88rem;color:var(--text-muted);">PC1 is now in VLAN 10. PC2 is now in VLAN 20. They are in separate broadcast domains.</p>
+        </div>
+
+        <!-- S5 -->
+        <div class="note-block section-anchor" id="s5">
+          <h2 class="block-title"><span class="block-icon">&#128260;</span>5. Configuring the Trunk (Switch)</h2>
+          <p>The switch port connected to the router must be a <strong>trunk</strong> to carry multiple VLANs.</p>
+          <div class="config-block">
+            <div class="config-header">&#128268; Switch Configuration &mdash; Trunk to Router</div>
+            <div class="config-body">! Router connected to G0/1
+interface g0/1
+ switchport mode trunk</div>
+          </div>
+          <div class="cmd-group">
+            <div class="cmd-item">
+              <div class="cmd-label">Verify trunk</div>
+              <div class="cmd-code">show interfaces trunk</div>
+            </div>
+          </div>
+          <div class="net-diagram">           ROUTER
+              |
+              |
+            TRUNK (G0/1 on Switch)
+              |
+            SWITCH
+           /      \
+       VLAN 10    VLAN 20</div>
+        </div>
+
+        <!-- S6 -->
+        <div class="note-block section-anchor" id="s6">
+          <h2 class="block-title"><span class="block-icon">&#128260;</span>6. Router-on-a-Stick Overview</h2>
+          <p>One physical router interface (<code>G0/0</code>) with two logical subinterfaces handles routing for both VLANs.</p>
+          <div class="net-diagram">ROUTER G0/0
+   |
+   +-- G0/0.10  --> encapsulation dot1Q 10 --> 192.168.10.1
+   |
+   +-- G0/0.20  --> encapsulation dot1Q 20 --> 192.168.20.1
+   |
+   |
+  TRUNK
+   |
+  SWITCH
+  /    \
+VLAN10  VLAN20
+  |        |
+ PC1      PC2</div>
+                  <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day7">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 7 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">Inter-VLAN Practical Labs</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 8 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Build a complete multi-VLAN topology in Cisco Packet Tracer</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Create VLANs, assign names, and place ports in access mode</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Configure switch-to-router trunk with 802.1Q encapsulation</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Configure router physical interface and subinterfaces (e.g. g0/0/0.10, g0/0/0.20)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Assign correct IP addresses to subinterfaces matching host default gateways</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Trace the 7-step packet flow from PC1 in VLAN 10 to PC2 in VLAN 20</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Verify end-to-end ping reachability between hosts across different VLANs</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Verify configurations using show vlan brief, show interfaces trunk, and show ip route</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 7 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>What is Next:</strong> Routing fundamentals &mdash; static routes, dynamic routing, routing tables, and how this maps directly to AWS Route Tables and cloud networking.</div>
+          </div>
+        </div>
+
+      </main>
+
+      <aside class="note-sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 7 Progress</div>
+          <div>
+            <div class="progress-item"><span>Topics</span><span style="color:var(--primary);font-weight:600;">14 sections</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Phase 1 Overall</span><span style="color:var(--primary);font-weight:600;">~70%</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="70" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; Quick Reference</div>
+          <ul class="key-terms-list">
+            <li><strong>Access</strong> One VLAN</li>
+            <li><strong>Trunk</strong> Many VLANs</li>
+            <li><strong>dot1Q</strong> VLAN tag</li>
+            <li><strong>G0/0.10</strong> Subinterface</li>
+            <li><strong>no shutdown</strong> Enable phys if</li>
+            <li><strong>Gateway</strong> Cross-subnet</li>
+            <li><strong>ping gw first</strong> Test order</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128268; Config Order</div>
+          <div style="font-family:'Fira Code',monospace;font-size:0.78rem;color:var(--soft);line-height:2;padding:10px;background:var(--lightest);border-radius:var(--radius-md);">
+            1. vlan 10 / vlan 20<br/>
+            2. access ports<br/>
+            3. trunk port<br/>
+            4. int g0/0 no shut<br/>
+            5. int g0/0.10<br/>
+            6. encap dot1Q 10<br/>
+            7. ip address<br/>
+            8. repeat for .20<br/>
+            9. ping test
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128268; Verify Commands</div>
+          <ul class="key-terms-list">
+            <li><code>show vlan brief</code></li>
+            <li><code>show interfaces trunk</code></li>
+            <li><code>show ip interface brief</code></li>
+            <li><code>show ip route</code></li>
+            <li><code>show running-config</code></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="day6.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8592; Day 6: VLANs &amp; Trunking Theory
+            </a>
+            <span style="color:var(--text-muted);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);">
+              &#8594; Day 8 (coming soon)
+            </span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand"><span class="logo-icon">&#9729;</span><span>The Way of <strong>Dreams</strong></span></div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>

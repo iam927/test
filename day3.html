@@ -1,0 +1,420 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 3 &ndash; ARP, ICMP, TCP, UDP & Network Communication | The Way of Dreams</title>
+  <meta name="description" content="Day 3 notes: ARP, ICMP, ping, TCP 3-way handshake, UDP, ports, sockets, encapsulation, and what happens when you open a website." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── DAY 3 EXTRAS ── */
+    .net-diagram { background:var(--dark); border-radius:var(--radius-md); padding:22px 24px; margin:14px 0; font-family:'Fira Code','Courier New',monospace; font-size:0.83rem; color:var(--soft); line-height:1.9; border:1px solid rgba(112,145,230,0.2); overflow-x:auto; white-space:pre; }
+    .toc-card { background:linear-gradient(135deg,rgba(61,82,160,0.07),rgba(112,145,230,0.12)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; }
+    .toc-card h3 { font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+    .toc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
+    .toc-list li a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:7px; transition:var(--transition); padding:3px 0; }
+    .toc-list li a:hover { color:var(--primary); padding-left:4px; }
+    .toc-list li a .toc-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-size:0.68rem; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    @media(max-width:600px){ .toc-list{grid-template-columns:1fr;} }
+    .section-anchor { scroll-margin-top:90px; }
+
+    /* ── TCP HANDSHAKE VISUAL ── */
+    .handshake { display:grid; grid-template-columns:1fr 60px 1fr; gap:0; margin:20px 0; align-items:stretch; }
+    .hs-side { display:flex; flex-direction:column; gap:0; }
+    .hs-host { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.9rem; padding:14px 20px; border-radius:var(--radius-md) var(--radius-md) 0 0; text-align:center; }
+    .hs-server-host { background:linear-gradient(135deg,#16a34a,#4ade80); }
+    .hs-line { background:rgba(112,145,230,0.12); border-left:3px solid rgba(112,145,230,0.2); flex:1; min-height:180px; }
+    .hs-server-line { border-left:none; border-right:3px solid rgba(74,222,128,0.3); background:rgba(74,222,128,0.06); }
+    .hs-middle { display:flex; flex-direction:column; justify-content:center; gap:12px; padding:0; position:relative; }
+    .hs-middle::before { content:''; position:absolute; top:0; bottom:0; left:50%; width:2px; background:linear-gradient(to bottom,rgba(112,145,230,0.3),rgba(74,222,128,0.3)); transform:translateX(-50%); }
+    .hs-arrow { display:flex; flex-direction:column; align-items:center; gap:2px; position:relative; z-index:1; }
+    .hs-arrow .arrow-label { font-family:'Outfit',sans-serif; font-weight:700; font-size:0.75rem; padding:4px 12px; border-radius:99px; white-space:nowrap; }
+    .hs-arrow.right .arrow-label { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+    .hs-arrow.left  .arrow-label { background:linear-gradient(135deg,#16a34a,#4ade80); color:white; }
+    .hs-arrow .arrow-line { font-size:1.3rem; }
+    .hs-arrow.right .arrow-line { color:var(--secondary); }
+    .hs-arrow.left  .arrow-line { color:#4ade80; }
+    .hs-established { background:rgba(74,222,128,0.1); border:1.5px solid rgba(74,222,128,0.3); border-radius:var(--radius-md); padding:12px 20px; text-align:center; font-family:'Outfit',sans-serif; font-weight:700; color:#16a34a; font-size:0.88rem; margin-top:10px; }
+
+    /* ── ARP FLOW ── */
+    .arp-flow { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .arp-device { background:linear-gradient(135deg,rgba(61,82,160,0.1),rgba(112,145,230,0.15)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-md); padding:14px 32px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.88rem; color:var(--primary); text-align:center; min-width:200px; }
+    .arp-arrow-down { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .arp-arrow-label { font-size:0.78rem; color:var(--secondary); font-weight:600; background:rgba(112,145,230,0.1); padding:4px 14px; border-radius:99px; }
+    .arp-arrow-icon { font-size:1.4rem; color:var(--secondary); line-height:1; margin:2px 0; }
+
+    /* ── PROTOCOL COMPARE CARDS ── */
+    .protocol-compare { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:16px 0; }
+    .protocol-card { border-radius:var(--radius-lg); padding:24px; }
+    .protocol-card.tcp-card { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.14)); border:2px solid rgba(112,145,230,0.35); }
+    .protocol-card.udp-card { background:linear-gradient(135deg,rgba(74,222,128,0.06),rgba(74,222,128,0.12)); border:2px solid rgba(74,222,128,0.3); }
+    .protocol-card h3 { font-family:'Outfit',sans-serif; font-weight:800; font-size:1.1rem; margin-bottom:12px; }
+    .protocol-card.tcp-card h3 { color:var(--primary); }
+    .protocol-card.udp-card h3 { color:#16a34a; }
+    .protocol-card ul { list-style:none; display:flex; flex-direction:column; gap:7px; }
+    .protocol-card li { font-size:0.85rem; color:var(--text-muted); padding-left:18px; position:relative; }
+    .protocol-card li::before { content:'&rsaquo;'; position:absolute; left:0; font-weight:700; }
+    .protocol-card.tcp-card li::before { color:var(--secondary); }
+    .protocol-card.udp-card li::before { color:#4ade80; }
+    .protocol-card .examples { margin-top:14px; padding-top:12px; border-top:1px solid rgba(173,187,218,0.3); font-size:0.78rem; color:var(--text-muted); }
+    .protocol-card .examples strong { display:block; margin-bottom:4px; }
+    @media(max-width:600px){ .protocol-compare{grid-template-columns:1fr;} }
+
+    /* ── ENCAPSULATION STACK ── */
+    .encap-stack { display:flex; flex-direction:column; gap:0; margin:16px 0; }
+    .encap-layer { display:flex; align-items:center; gap:0; border-radius:0; overflow:hidden; margin-bottom:3px; }
+    .encap-layer:first-child { border-radius:var(--radius-md) var(--radius-md) 0 0; }
+    .encap-layer:last-child  { border-radius:0 0 var(--radius-md) var(--radius-md); margin-bottom:0; }
+    .encap-label { padding:10px 16px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.78rem; color:white; min-width:110px; text-align:center; }
+    .encap-content { flex:1; padding:10px 16px; font-family:'Fira Code',monospace; font-size:0.8rem; border-left:2px solid rgba(255,255,255,0.15); }
+    .encap-layer.l7  { background:rgba(61,82,160,0.15); } .encap-layer.l7 .encap-label  { background:#3D52A0; } .encap-layer.l7 .encap-content  { color:#3D52A0; }
+    .encap-layer.l4  { background:rgba(61,82,160,0.22); } .encap-layer.l4 .encap-label  { background:#4a62b0; } .encap-layer.l4 .encap-content  { color:#4a62b0; }
+    .encap-layer.l3  { background:rgba(112,145,230,0.18); } .encap-layer.l3 .encap-label { background:#7091E6; } .encap-layer.l3 .encap-content { color:#5070c0; }
+    .encap-layer.l2  { background:rgba(134,151,196,0.2); } .encap-layer.l2 .encap-label  { background:#8697C4; } .encap-layer.l2 .encap-content  { color:#6070a0; }
+    .encap-layer.l1  { background:rgba(173,187,218,0.25); } .encap-layer.l1 .encap-label { background:#ADBBDA; color:#333; } .encap-layer.l1 .encap-content { color:#555; }
+
+    /* ── WEBSITE FLOW ── */
+    .web-flow { display:flex; flex-direction:column; gap:0; margin:16px 0; }
+    .wf-step { display:flex; align-items:flex-start; gap:16px; padding:14px 18px; background:white; border:1.5px solid rgba(173,187,218,0.35); border-radius:0; border-top:none; }
+    .wf-step:first-child { border-top:1.5px solid rgba(173,187,218,0.35); border-radius:var(--radius-md) var(--radius-md) 0 0; }
+    .wf-step:last-child  { border-radius:0 0 var(--radius-md) var(--radius-md); }
+    .wf-step:hover { background:rgba(112,145,230,0.04); }
+    .wf-num { width:30px; height:30px; min-width:30px; background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border-radius:50%; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.8rem; display:flex; align-items:center; justify-content:center; }
+    .wf-body h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.9rem; }
+    .wf-body p { font-size:0.84rem; color:var(--text-muted); line-height:1.6; margin-top:3px; }
+
+    /* ── SOCKET VISUAL ── */
+    .socket-box { background:var(--dark); border-radius:var(--radius-lg); padding:24px 28px; margin:14px 0; font-family:'Fira Code',monospace; }
+    .socket-row { display:flex; align-items:center; gap:0; margin:8px 0; }
+    .socket-src { background:rgba(112,145,230,0.2); border:1px solid rgba(112,145,230,0.4); border-radius:var(--radius-md) 0 0 var(--radius-md); padding:10px 18px; color:var(--soft); font-size:0.85rem; flex:1; }
+    .socket-arrow { background:rgba(255,255,255,0.05); padding:10px 14px; color:var(--secondary); font-size:1rem; }
+    .socket-dst { background:rgba(74,222,128,0.12); border:1px solid rgba(74,222,128,0.3); border-radius:0 var(--radius-md) var(--radius-md) 0; padding:10px 18px; color:#4ade80; font-size:0.85rem; flex:1; }
+    .socket-proto { text-align:center; margin-top:10px; color:var(--steel); font-size:0.8rem; }
+
+    /* ── TROUBLESHOOT FLOW ── */
+    .ts-flow { display:flex; flex-direction:column; align-items:flex-start; gap:0; margin:16px 0; }
+    .ts-step { display:flex; align-items:center; gap:14px; padding:10px 18px; background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-md); font-size:0.88rem; color:var(--text-main); width:100%; }
+    .ts-step .ts-icon { font-size:1.1rem; }
+    .ts-step strong { color:var(--primary); }
+    .ts-arrow { width:2px; height:14px; background:linear-gradient(to bottom,var(--secondary),var(--soft)); margin-left:32px; }
+
+    /* ── LAB STEPS ── */
+    .lab-block { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-lg); padding:24px; margin-bottom:16px; }
+    .lab-block-title { font-family:'Outfit',sans-serif; font-weight:700; font-size:0.95rem; color:var(--primary); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+
+    /* ── IQ LIST ── */
+    .iq-section h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--primary); font-size:0.9rem; margin:18px 0 8px; }
+    .iq-list { list-style:none; display:flex; flex-direction:column; gap:8px; counter-reset:iq-counter; }
+    .iq-list li { counter-increment:iq-counter; background:var(--lightest); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 16px; font-size:0.88rem; color:var(--text-muted); position:relative; padding-left:46px; }
+    .iq-list li::before { content:"Q" counter(iq-counter); position:absolute; left:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.72rem; color:var(--secondary); top:50%; transform:translateY(-50%); }
+
+    /* ── MENTAL MODEL ── */
+    .mental-model { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .mm-item { padding:10px 36px; border-radius:var(--radius-md); font-family:'Outfit',sans-serif; font-weight:700; font-size:0.88rem; text-align:center; width:fit-content; min-width:240px; }
+    .mm-arrow { font-size:1.3rem; color:var(--secondary); margin:2px 0; }
+    .mm-split { display:flex; gap:20px; align-items:flex-start; margin:4px 0; }
+    .mm-branch { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .mm-item.app   { background:linear-gradient(135deg,#3D52A0,#7091E6); color:white; }
+    .mm-item.proto { background:rgba(112,145,230,0.15); border:1.5px solid rgba(112,145,230,0.35); color:var(--primary); }
+    .mm-item.net   { background:rgba(134,151,196,0.2); border:1.5px solid rgba(134,151,196,0.4); color:#5a6a8a; }
+    .mm-item.good  { background:linear-gradient(135deg,#16a34a,#4ade80); color:white; }
+    .mm-item.warn  { background:rgba(250,204,21,0.15); border:1.5px solid rgba(250,204,21,0.4); color:#b45309; }
+
+    /* ── CHALLENGE BOX ── */
+    .challenge-box { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.14)); border:2px solid rgba(112,145,230,0.35); border-radius:var(--radius-lg); padding:28px; }
+    .challenge-list { list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:c-counter; margin-top:14px; }
+    .challenge-list li { counter-increment:c-counter; padding:10px 14px 10px 44px; background:white; border-radius:var(--radius-sm); font-size:0.88rem; color:var(--text-muted); position:relative; border:1px solid rgba(173,187,218,0.4); }
+    .challenge-list li::before { content:"Q" counter(c-counter); position:absolute; left:12px; font-family:'Outfit',sans-serif; font-weight:700; color:var(--primary); font-size:0.75rem; top:50%; transform:translateY(-50%); }
+    .challenge-list li strong { color:var(--primary); display:block; font-size:0.82rem; margin-top:4px; }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- BACK BAR -->
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <!-- DAY HERO -->
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128218; Day 3 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">ARP, ICMP, TCP, UDP &amp;<br/>Network Communication</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 3 of the journey</span>
+        <span>&#9203; ~70 min read</span>
+        <span>&#127891; Theory + 5 Labs</span>
+        <span>&#128100; 20 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">ARP</span>
+        <span class="day-tag">ICMP</span>
+        <span class="day-tag">Ping</span>
+        <span class="day-tag">TCP</span>
+        <span class="day-tag">UDP</span>
+        <span class="day-tag">3-Way Handshake</span>
+        <span class="day-tag">Ports</span>
+        <span class="day-tag">Sockets</span>
+        <span class="day-tag">Encapsulation</span>
+        <span class="day-tag">HTTPS Flow</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE LAYOUT -->
+  <div class="container">
+    <div class="note-layout">
+
+      <!-- ── MAIN CONTENT ── -->
+      <main class="note-main">
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents &mdash; Day 3</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>MAC vs IP Address</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>Why Both?</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>ARP &mdash; Address Resolution</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>ARP Request &amp; Reply</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>ARP Cache</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>ARP is Local + ARP vs DNS</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>ICMP &amp; Ping</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>TCP</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>UDP</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>TCP vs UDP</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>TCP 3-Way Handshake</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Ports &amp; Sockets</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>Encapsulation &amp; Decapsulation</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>Opening a Website &mdash; Full Flow</a></li>
+            <li><a href="#s15"><span class="toc-num">15</span>Troubleshooting Method</a></li>
+            <li><a href="#s16"><span class="toc-num">16</span>Core Mental Model</a></li>
+            <li><a href="#labs"><span class="toc-num">&#128299;</span>5 Practical Labs</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>20 Interview Questions</a></li>
+            <li><a href="#challenge"><span class="toc-num">&#129504;</span>Day 3 Challenge</a></li>
+            <li><a href="#summary"><span class="toc-num">&#11088;</span>Must Remember</a></li>
+          </ul>
+        </div>
+
+        <!-- ── S1: MAC vs IP ── -->
+        <div class="note-block section-anchor" id="s1">
+          <h2 class="block-title"><span class="block-icon">&#128279;</span>1. MAC Address vs IP Address</h2>
+          <p>A device can have both a MAC address and an IP address at the same time &mdash; they operate at <em>different</em> OSI layers.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="cc-icon">&#128279;</div>
+              <div class="cc-title">MAC Address</div>
+              <div class="cc-desc"><strong>Layer 2 &mdash; Data Link</strong><br/>Hardware identifier burned into the NIC.<br/>e.g. <code>AA:BB:CC:11:22:33</code><br/>Used on the <em>local</em> network.</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#127758;</div>
+              <div class="cc-title">IP Address</div>
+              <div class="cc-desc"><strong>Layer 3 &mdash; Network</strong><br/>Logical addressing assigned by config/DHCP.<br/>e.g. <code>192.168.1.10</code><br/>Used for <em>end-to-end</em> routing.</div>
+            </div>
+          </div>
+                  <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day3">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 3 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">ARP, ICMP, TCP/UDP & Flow</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 8 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain ARP and why Layer 2 MAC resolution is required on Ethernet</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain the difference between ARP (local MAC lookup) and DNS (name lookup)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Describe ICMP Echo Request/Reply and understand ping troubleshooting limits</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Walk through the TCP 3-way handshake: SYN &rarr; SYN-ACK &rarr; ACK</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Compare TCP (reliable, connection-oriented) vs UDP (fast, lightweight)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain ports and sockets (IP + Port combination)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Describe data encapsulation and decapsulation through the OSI stack</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Walk step-by-step through what happens when opening an HTTPS website</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 3 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>What's Next &mdash; Day 4:</strong> Routing &mdash; static vs dynamic, routing tables, how routers forward packets, and how this maps directly to AWS Route Tables and cloud networking.</div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- ── SIDEBAR ── -->
+      <aside class="note-sidebar">
+
+        <!-- Progress -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 3 Progress</div>
+          <div>
+            <div class="progress-item"><span>Topics</span><span style="color:var(--primary);font-weight:600;">16 sections</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Labs</span><span style="color:#16a34a;font-weight:600;">5 labs &#128299;</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Phase 1 Overall</span><span style="color:var(--primary);font-weight:600;">~30%</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="30" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Quick Ref -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; Quick Reference</div>
+          <ul class="key-terms-list">
+            <li><strong>ARP</strong> IPv4 addr &rarr; MAC (local only)</li>
+            <li><strong>DNS</strong> Name &rarr; IP address</li>
+            <li><strong>ICMP</strong> Ping, error reporting (L3)</li>
+            <li><strong>TCP</strong> Reliable, SYN-SYN/ACK-ACK</li>
+            <li><strong>UDP</strong> Fast, connectionless</li>
+            <li><strong>Segment</strong> TCP data unit (L4)</li>
+            <li><strong>Datagram</strong> UDP data unit (L4)</li>
+            <li><strong>Packet</strong> IP data unit (L3)</li>
+            <li><strong>Frame</strong> Ethernet data unit (L2)</li>
+          </ul>
+        </div>
+
+        <!-- Key Ports -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128297; Key Ports</div>
+          <ul class="key-terms-list">
+            <li><strong>22</strong> SSH</li>
+            <li><strong>23</strong> Telnet (insecure)</li>
+            <li><strong>53</strong> DNS (UDP)</li>
+            <li><strong>80</strong> HTTP</li>
+            <li><strong>443</strong> HTTPS</li>
+            <li><strong>67/68</strong> DHCP (UDP)</li>
+            <li><strong>3389</strong> RDP</li>
+          </ul>
+        </div>
+
+        <!-- TCP Handshake -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#129309; TCP Handshake</div>
+          <div style="text-align:center;padding:12px;background:var(--lightest);border-radius:var(--radius-md);">
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">SYN</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">SYN-ACK</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.88rem;color:var(--primary);font-weight:700;">ACK</div>
+            <div style="color:#16a34a;font-size:0.75rem;margin-top:8px;font-weight:600;">Connection Established &#10003;</div>
+          </div>
+        </div>
+
+        <!-- Navigate -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="day2.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8592; Day 2: IPv4 &amp; Subnetting
+            </a>
+            <a href="day4.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8594; Day 4: DNS &amp; DHCP
+            </a>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon">&#9729;</span>
+          <span>The Way of <strong>Dreams</strong></span>
+        </div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+

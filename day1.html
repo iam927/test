@@ -1,0 +1,1142 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 1 – Networking Fundamentals | The Way of Dreams</title>
+  <meta name="description" content="Day 1 complete notes: Computer Networks, OSI Model, TCP/IP, MAC, IP, DNS, DHCP, Ports, Troubleshooting, Lab and Interview Questions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── DAY 1 EXTRA STYLES ── */
+    .toc-card {
+      background: linear-gradient(135deg, rgba(61,82,160,0.07), rgba(112,145,230,0.12));
+      border: 1.5px solid rgba(112,145,230,0.3);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
+    .toc-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 24px;
+    }
+    .toc-list li a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: var(--transition);
+      padding: 3px 0;
+    }
+    .toc-list li a:hover { color: var(--primary); padding-left: 4px; }
+    .toc-list li a .toc-num {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-size: 0.68rem;
+      font-weight: 700;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    @media(max-width:600px){ .toc-list { grid-template-columns: 1fr; } }
+
+    /* Network diagram box */
+    .net-diagram {
+      background: var(--dark);
+      border-radius: var(--radius-md);
+      padding: 22px 24px;
+      margin: 14px 0;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.83rem;
+      color: var(--soft);
+      line-height: 1.9;
+      border: 1px solid rgba(112,145,230,0.2);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* Ports table highlight */
+    .port-important { color: var(--secondary); font-weight: 700; }
+
+    /* Section anchor */
+    .section-anchor { scroll-margin-top: 90px; }
+
+    /* Interview Qs */
+    .iq-list { list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: iq-counter; }
+    .iq-list li {
+      counter-increment: iq-counter;
+      background: var(--lightest);
+      border-left: 3px solid var(--secondary);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 12px 16px;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      position: relative;
+      padding-left: 48px;
+    }
+    .iq-list li::before {
+      content: "Q" counter(iq-counter);
+      position: absolute;
+      left: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--secondary);
+    }
+
+    /* Challenge box */
+    .challenge-box {
+      background: linear-gradient(135deg, rgba(61,82,160,0.08), rgba(112,145,230,0.14));
+      border: 2px solid rgba(112,145,230,0.35);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+    }
+    .challenge-box h3 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+    .challenge-list { list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: c-counter; }
+    .challenge-list li {
+      counter-increment: c-counter;
+      padding: 10px 14px 10px 44px;
+      background: white;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      position: relative;
+      border: 1px solid rgba(173,187,218,0.4);
+    }
+    .challenge-list li::before {
+      content: counter(c-counter);
+      position: absolute;
+      left: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Lab steps */
+    .lab-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(173,187,218,0.25);
+    }
+    .lab-step:last-child { border-bottom: none; }
+    .lab-step-num {
+      width: 34px; height: 34px; min-width: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lab-step-body { flex: 1; }
+    .lab-step-body p { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Troubleshoot flow */
+    .ts-flow { display: flex; flex-direction: column; align-items: flex-start; gap: 0; margin: 16px 0; }
+    .ts-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 18px;
+      background: white;
+      border: 1.5px solid rgba(173,187,218,0.4);
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      color: var(--text-main);
+      width: 100%;
+      position: relative;
+    }
+    .ts-step .ts-icon { font-size: 1.1rem; }
+    .ts-step strong { color: var(--primary); }
+    .ts-arrow {
+      width: 2px;
+      height: 18px;
+      background: linear-gradient(to bottom, var(--secondary), var(--soft));
+      margin-left: 32px;
+    }
+
+    /* Key concept mini cards */
+    .mini-relation {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .mini-rel-card {
+      background: linear-gradient(135deg, rgba(61,82,160,0.07), rgba(112,145,230,0.12));
+      border: 1px solid rgba(112,145,230,0.25);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      text-align: center;
+      flex: 1;
+      min-width: 130px;
+    }
+    .mini-rel-card .mrc-top {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+    .mini-rel-card .mrc-arrow { color: var(--steel); margin: 4px 0; font-size: 1.1rem; }
+    .mini-rel-card .mrc-mid {
+      font-size: 0.82rem;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+    .mini-rel-card .mrc-bot {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- BACK BAR -->
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <!-- DAY HERO -->
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128218; Day 1 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">Networking Fundamentals</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 1 of the journey</span>
+        <span>&#9203; ~60 min read</span>
+        <span>&#127891; Theory + Lab</span>
+        <span>&#128100; 15 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">OSI Model</span>
+        <span class="day-tag">TCP/IP</span>
+        <span class="day-tag">IP Address</span>
+        <span class="day-tag">MAC Address</span>
+        <span class="day-tag">DNS</span>
+        <span class="day-tag">DHCP</span>
+        <span class="day-tag">Switch &amp; Router</span>
+        <span class="day-tag">Firewall</span>
+        <span class="day-tag">Troubleshooting</span>
+        <span class="day-tag">Windows Commands</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE LAYOUT -->
+  <div class="container">
+    <div class="note-layout">
+
+      <!-- ── MAIN CONTENT ── -->
+      <main class="note-main">
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents — Day 1</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>What is a Computer Network?</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>Switch</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>Router</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>Firewall</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>Wireless Access Point</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>OSI Model Overview</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>OSI Layers Deep Dive</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>TCP/IP Model</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>MAC Address</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>IP Address &amp; Subnetting</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>Private &amp; Public IP</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Default Gateway</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>DNS &amp; DHCP</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>Important Ports</a></li>
+            <li><a href="#s15"><span class="toc-num">15</span>Ping &amp; Windows Commands</a></li>
+            <li><a href="#s16"><span class="toc-num">16</span>Troubleshooting Method</a></li>
+            <li><a href="#s17"><span class="toc-num">17</span>Key Concepts Summary</a></li>
+            <li><a href="#lab"><span class="toc-num">&#128299;</span>Practical Lab</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>Interview Questions</a></li>
+            <li><a href="#challenge"><span class="toc-num">&#129504;</span>Day 1 Challenge</a></li>
+          </ul>
+        </div>
+
+        <!-- ── SECTION 1: What is a Network ── -->
+        <div class="note-block section-anchor" id="s1">
+          <h2 class="block-title"><span class="block-icon">&#127760;</span>1. What is a Computer Network?</h2>
+          <p>A <strong>computer network</strong> is a collection of devices connected together so that they can <strong>communicate and share resources</strong>.</p>
+          <div class="net-diagram">Laptop ─────┐
+Desktop ────┤
+Printer ────┤
+             │
+          SWITCH
+             │
+           ROUTER
+             │
+          INTERNET</div>
+          <p style="margin-top:14px;">Devices communicate using <strong>networking protocols</strong> — agreed-upon rules for how data is sent and received.</p>
+
+          <h4 style="margin-top:20px;">Network Devices</h4>
+          <div class="concept-grid">
+            <div class="concept-card"><div class="cc-icon">&#128187;</div><div class="cc-title">Computer / Laptop</div><div class="cc-desc">End-user device that generates and consumes data</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128252;</div><div class="cc-title">Server</div><div class="cc-desc">Provides services (web, file, email) to other devices</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128424;</div><div class="cc-title">Printer</div><div class="cc-desc">Shared resource on the network</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128268;</div><div class="cc-title">Switch</div><div class="cc-desc">Connects devices within a LAN using MAC addresses</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128225;</div><div class="cc-title">Router</div><div class="cc-desc">Connects different IP networks using IP addresses</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128274;</div><div class="cc-title">Firewall</div><div class="cc-desc">Controls traffic based on security rules</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128246;</div><div class="cc-title">Wireless AP</div><div class="cc-desc">Provides Wi-Fi connectivity to wireless devices</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128241;</div><div class="cc-title">Modem</div><div class="cc-desc">Converts signals between ISP and your network</div></div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 2: Switch ── -->
+        <div class="note-block section-anchor" id="s2">
+          <h2 class="block-title"><span class="block-icon">&#128268;</span>2. Switch</h2>
+          <p>A <strong>switch</strong> connects devices within the same <strong>Local Area Network (LAN)</strong>. It uses <strong>MAC addresses</strong> to forward Ethernet frames only to the correct destination port — unlike a hub which broadcasts to all ports.</p>
+          <div class="net-diagram">PC1 ──┐
+PC2 ──┤
+PC3 ──┤── Switch
+Printer ┘</div>
+          <div class="callout callout-tip" style="margin-top:14px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>How it works:</strong> If PC1 wants to talk to PC2:<br/><code style="background:rgba(112,145,230,0.1);padding:2px 8px;border-radius:4px;">PC1 → Switch → PC2</code><br/>The switch reads PC2's MAC address and sends the frame <em>only</em> to that port. All other ports are silent.</div>
+          </div>
+          <div class="callout callout-note" style="margin-top:10px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>OSI Layer:</strong> Switch operates at <strong>Layer 2 (Data Link)</strong> and uses MAC addresses.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 3: Router ── -->
+        <div class="note-block section-anchor" id="s3">
+          <h2 class="block-title"><span class="block-icon">&#128225;</span>3. Router</h2>
+          <p>A <strong>router connects different IP networks</strong>. It makes forwarding decisions using <strong>IP addresses and routing tables</strong>.</p>
+          <div class="net-diagram">Network A
+192.168.1.0/24
+      │
+    Router
+      │
+Network B
+192.168.2.0/24</div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div>
+              <strong>Key distinction for interviews:</strong><br/>
+              &#128268; <strong>Switch</strong> → connects devices <em>within</em> the same network (Layer 2, MAC)<br/>
+              &#128225; <strong>Router</strong> → connects <em>different</em> IP networks (Layer 3, IP)
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 4: Firewall ── -->
+        <div class="note-block section-anchor" id="s4">
+          <h2 class="block-title"><span class="block-icon">&#128274;</span>4. Firewall</h2>
+          <p>A <strong>firewall</strong> controls network traffic according to <strong>security rules</strong>. It sits between the internet and your internal network.</p>
+          <div class="net-diagram">Internet
+   │
+   ▼
+Firewall
+   │
+   ▼
+Internal Network</div>
+          <p style="margin-top:14px;">A firewall can filter traffic based on:</p>
+          <ul>
+            <li><strong>Source IP</strong> — where traffic is coming from</li>
+            <li><strong>Destination IP</strong> — where it's going</li>
+            <li><strong>Port</strong> — which service (80=HTTP, 443=HTTPS)</li>
+            <li><strong>Protocol</strong> — TCP, UDP, ICMP</li>
+            <li><strong>Application</strong> — (advanced/Next-Gen firewalls)</li>
+          </ul>
+          <div class="net-diagram" style="margin-top:14px;">Example rules:
+Allow TCP 443    → HTTPS traffic allowed
+Deny  TCP 23     → Telnet blocked (insecure)</div>
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div>Firewalls will be studied <strong>much more deeply in Month 2</strong>. For now, understand what they do and why they exist.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 5: Wireless AP ── -->
+        <div class="note-block section-anchor" id="s5">
+          <h2 class="block-title"><span class="block-icon">&#128246;</span>5. Wireless Access Point (AP)</h2>
+          <p>An <strong>Access Point</strong> provides wireless connectivity to devices and connects them to the wired network.</p>
+          <div class="net-diagram">                Switch
+                   │
+                  AP
+              /    |    \
+           Laptop Phone Tablet</div>
+          <div class="callout callout-tip" style="margin-top:14px;">
+            <span class="callout-icon">&#128161;</span>
+            <div>You've worked with APs in IT support. Architecturally, the AP bridges wireless clients to the wired LAN — it's not a router. The router is upstream.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 6: OSI Model Overview ── -->
+        <div class="note-block section-anchor" id="s6">
+          <h2 class="block-title"><span class="block-icon">&#128218;</span>6. The OSI Model — 7 Layers</h2>
+          <p>The <strong>Open Systems Interconnection (OSI)</strong> model is a conceptual framework used to understand how network communication works. It has <strong>7 layers</strong>.</p>
+          <div class="net-diagram">Layer 7 → Application
+Layer 6 → Presentation
+Layer 5 → Session
+Layer 4 → Transport
+Layer 3 → Network
+Layer 2 → Data Link
+Layer 1 → Physical</div>
+          <div class="callout callout-tip" style="margin-top:16px;">
+            <span class="callout-icon">&#129504;</span>
+            <div>
+              <strong>Memory trick (Layer 1 → 7, bottom up):</strong><br/>
+              <em>"<strong>P</strong>lease <strong>D</strong>o <strong>N</strong>ot <strong>T</strong>hrow <strong>S</strong>ausage <strong>P</strong>izza <strong>A</strong>way"</em><br/>
+              Physical → Data Link → Network → Transport → Session → Presentation → Application
+            </div>
+          </div>
+
+          <!-- Quick Reference Table -->
+          <table class="osi-table" style="margin-top:20px;">
+            <thead>
+              <tr><th>Layer</th><th>Name</th><th>Data Unit</th><th>Important Concepts</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>7</td><td>Application</td><td>Data</td><td>HTTP, HTTPS, DNS, SSH, SMTP, FTP</td></tr>
+              <tr><td>6</td><td>Presentation</td><td>Data</td><td>Formatting, Encoding, Encryption, Compression</td></tr>
+              <tr><td>5</td><td>Session</td><td>Data</td><td>Session management (establish, maintain, terminate)</td></tr>
+              <tr><td>4</td><td>Transport</td><td>Segment</td><td>TCP, UDP — end-to-end delivery</td></tr>
+              <tr><td>3</td><td>Network</td><td>Packet</td><td>IP addressing, Routing</td></tr>
+              <tr><td>2</td><td>Data Link</td><td>Frame</td><td>MAC addresses, Ethernet, VLAN, Switches</td></tr>
+              <tr><td>1</td><td>Physical</td><td>Bits</td><td>Cables, fiber, radio signals, connectors</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── SECTION 7: OSI Layers Deep Dive ── -->
+        <div class="note-block section-anchor" id="s7">
+          <h2 class="block-title"><span class="block-icon">&#128269;</span>7. OSI Layers — Deep Dive</h2>
+
+          <h4>&#9679; Layer 1 — Physical</h4>
+          <p>Deals with the transmission of <strong>raw bits/signals</strong> over a physical medium. No intelligence — just signals.</p>
+          <ul>
+            <li>Ethernet cable (copper), Fiber optic cable, Radio signals (Wi-Fi)</li>
+            <li>Electrical signals, Optical signals, Connectors, Pin layouts</li>
+            <li>Devices: Hubs, Repeaters, NICs, Cables, Antennas</li>
+          </ul>
+          <div class="net-diagram" style="margin-top:10px;">PC ───── Ethernet Cable ───── Switch
+         (Layer 1 physical medium)</div>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 2 — Data Link</h4>
+          <p>Handles <strong>frames and MAC addresses</strong>. Responsible for node-to-node delivery on the same network.</p>
+          <ul>
+            <li><strong>MAC address</strong> — unique hardware address of a network interface</li>
+            <li><strong>Ethernet</strong> — dominant wired LAN protocol</li>
+            <li><strong>VLAN</strong> — logically segmenting a physical network</li>
+            <li>Devices: Switches, Bridges</li>
+          </ul>
+          <div class="callout callout-tip" style="margin-top:10px;">
+            <span class="callout-icon">&#128161;</span>
+            <div>Example MAC address: <code style="background:rgba(112,145,230,0.1);padding:2px 8px;border-radius:4px;font-family:'Fira Code',monospace;">A4:5E:60:12:AB:91</code> — 48 bits, written as 6 hex pairs. <strong>MAC → Layer 2.</strong></div>
+          </div>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 3 — Network</h4>
+          <p>Handles <strong>IP addressing and routing</strong>. Responsible for end-to-end delivery across multiple networks.</p>
+          <ul>
+            <li><strong>IPv4</strong> — 32-bit, e.g. <code style="background:rgba(112,145,230,0.1);padding:1px 6px;border-radius:4px;font-family:'Fira Code',monospace;">192.168.1.10</code></li>
+            <li><strong>IPv6</strong> — 128-bit, next-generation</li>
+            <li>Routing — choosing the best path using routing tables</li>
+            <li>Devices: Routers, Layer-3 Switches</li>
+          </ul>
+          <div class="callout callout-tip" style="margin-top:10px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>IP address → Layer 3.</strong> This is critical — MAC is Layer 2, IP is Layer 3. Interviewers love this question.</div>
+          </div>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 4 — Transport</h4>
+          <p>Provides <strong>end-to-end transport mechanisms</strong> between applications on different hosts.</p>
+
+          <div class="concept-grid" style="margin-top:12px;">
+            <div class="concept-card">
+              <div class="cc-icon">&#128275;</div>
+              <div class="cc-title">TCP</div>
+              <div class="cc-desc"><strong>Reliable, connection-oriented.</strong> Uses 3-way handshake (SYN → SYN-ACK → ACK).<br/>Used by: HTTPS, SSH, HTTP</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#9889;</div>
+              <div class="cc-title">UDP</div>
+              <div class="cc-desc"><strong>Connectionless, fast, no guarantee.</strong> Lower overhead.<br/>Used by: DNS, DHCP, video streaming, gaming</div>
+            </div>
+          </div>
+          <div class="callout callout-exam" style="margin-top:12px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>TCP / UDP → Layer 4.</strong> TCP = reliable (slower). UDP = fast (no guarantee). A few lost video frames is better than buffering — that's why video uses UDP.</div>
+          </div>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 5 — Session</h4>
+          <p>Establishes, manages, and terminates communication <strong>sessions</strong>. In modern TCP/IP networking, these functions are usually handled by applications rather than a separate layer. <em>For interviews: understand its conceptual role.</em></p>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 6 — Presentation</h4>
+          <p>Concerned with how <strong>data is represented</strong> — formatting, encoding, encryption/decryption, compression. In modern networks these are implemented by specific protocols (e.g., TLS for encryption).</p>
+
+          <h4 style="margin-top:22px;">&#9679; Layer 7 — Application</h4>
+          <p>The layer <strong>closest to end users and applications</strong>. Where application protocols live.</p>
+          <ul>
+            <li>HTTP / HTTPS — web browsing</li>
+            <li>DNS — name resolution</li>
+            <li>SSH — secure remote access</li>
+            <li>SMTP — email sending</li>
+            <li>FTP — file transfer</li>
+          </ul>
+          <div class="callout callout-exam" style="margin-top:10px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>Application protocols → Layer 7.</strong></div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 8: TCP/IP Model ── -->
+        <div class="note-block section-anchor" id="s8">
+          <h2 class="block-title"><span class="block-icon">&#128101;</span>8. TCP/IP Model</h2>
+          <p>The <strong>TCP/IP model</strong> is the practical protocol architecture behind the Internet. It uses <strong>4 layers</strong>.</p>
+          <table class="osi-table" style="margin-top:16px;">
+            <thead>
+              <tr><th>TCP/IP Layer</th><th>Maps to OSI</th><th>Key Protocols</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Application</td><td>Layers 7 + 6 + 5</td><td>HTTP, HTTPS, DNS, SSH, SMTP, FTP</td></tr>
+              <tr><td>Transport</td><td>Layer 4</td><td>TCP, UDP</td></tr>
+              <tr><td>Internet</td><td>Layer 3</td><td>IP, ICMP, ARP</td></tr>
+              <tr><td>Network Access</td><td>Layers 2 + 1</td><td>Ethernet, Wi-Fi, MAC</td></tr>
+            </tbody>
+          </table>
+          <div class="callout callout-note" style="margin-top:16px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>Key insight:</strong> OSI is a <em>conceptual reference model</em>. TCP/IP is the <em>practical networking architecture</em> used by the Internet. Don't over-memorize the mapping — understand the main idea.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 9: MAC Address ── -->
+        <div class="note-block section-anchor" id="s9">
+          <h2 class="block-title"><span class="block-icon">&#128279;</span>9. MAC Address</h2>
+          <p><strong>MAC = Media Access Control</strong></p>
+          <p>A MAC address identifies a <strong>network interface at the Data Link layer (Layer 2)</strong>. It is assigned to the physical hardware (NIC) by the manufacturer.</p>
+          <div class="net-diagram">A4:5E:60:12:AB:91
+
+A4 : 5E : 60 : 12 : AB : 91
+│─────────────┐ │─────────────┐
+  OUI (vendor)    Device ID
+
+6 pairs × 8 bits = 48 bits total
+Written in hexadecimal</div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div>
+              <strong>Critical to remember:</strong><br/>
+              MAC → <strong>Layer 2</strong> (Data Link) → used by <strong>Switches</strong><br/>
+              IP &nbsp;&nbsp; → <strong>Layer 3</strong> (Network) → used by <strong>Routers</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 10: IP Address ── -->
+        <div class="note-block section-anchor" id="s10">
+          <h2 class="block-title"><span class="block-icon">&#127758;</span>10. IP Address &amp; Subnet Mask</h2>
+
+          <h4>IPv4 Address</h4>
+          <p>An IP address identifies a network interface at Layer 3. IPv4 uses <strong>32 bits</strong> written as 4 octets.</p>
+          <div class="net-diagram">192 . 168 . 1 . 10
+ ↑     ↑    ↑   ↑
+Oct1  Oct2  Oct3  Oct4
+
+Each octet = 8 bits
+Range per octet: 0 – 255
+Total: 4 × 8 = 32 bits</div>
+
+          <h4 style="margin-top:20px;">Subnet Mask</h4>
+          <p>A subnet mask determines which part of the IP address is the <strong>network</strong> and which part is the <strong>host</strong>.</p>
+          <div class="net-diagram">IP Address:   192.168.1.10
+Subnet Mask:  255.255.255.0
+
+CIDR notation: 192.168.1.10/24
+                              ↑
+                        /24 = 24 network bits</div>
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div>Subnetting will be studied in full detail on <strong>Day 2</strong>. Today just understand what subnet masks are for.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 11: Private & Public IP ── -->
+        <div class="note-block section-anchor" id="s11">
+          <h2 class="block-title"><span class="block-icon">&#128275;</span>11. Private &amp; Public IP Addresses</h2>
+
+          <h4>Private IPv4 Ranges (RFC 1918)</h4>
+          <p>These are used <strong>inside private networks</strong> (home, office, cloud VPC). They are not routable on the public Internet.</p>
+          <table class="osi-table" style="margin-top:12px;">
+            <thead><tr><th>Range</th><th>CIDR</th><th>Example</th><th>Typical Use</th></tr></thead>
+            <tbody>
+              <tr><td>10.x.x.x</td><td>10.0.0.0/8</td><td>10.10.1.20</td><td>Large enterprise, cloud VPCs</td></tr>
+              <tr><td>172.16–31.x.x</td><td>172.16.0.0/12</td><td>172.20.5.10</td><td>Medium networks</td></tr>
+              <tr><td>192.168.x.x</td><td>192.168.0.0/16</td><td>192.168.1.50</td><td>Home/small office</td></tr>
+            </tbody>
+          </table>
+
+          <h4 style="margin-top:20px;">Public IP Address</h4>
+          <p>A public IP is <strong>globally routable on the Internet</strong>. Your ISP assigns one to your router.</p>
+          <div class="net-diagram">Private Network (192.168.x.x)
+      │
+      ▼
+   Router/NAT  ← translates private → public
+      │
+      ▼
+Public Internet (e.g. 203.0.113.10)</div>
+          <div class="callout callout-exam" style="margin-top:12px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>Cloud relevance:</strong> In AWS/Azure, instances in a VPC use <em>private</em> IPs. They need a NAT Gateway or Elastic IP (public) to reach the Internet.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 12: Default Gateway ── -->
+        <div class="note-block section-anchor" id="s12">
+          <h2 class="block-title"><span class="block-icon">&#128663;</span>12. Default Gateway</h2>
+          <p>The <strong>default gateway</strong> is the router/interface a host sends traffic to when the destination is <strong>outside its local subnet</strong>.</p>
+          <div class="net-diagram">PC
+192.168.1.10
+      │
+      ▼
+  Switch
+      │
+      ▼
+Router (Default Gateway)
+192.168.1.1
+      │
+      ▼
+  Internet</div>
+          <p style="margin-top:14px;">A PC's full network configuration looks like:</p>
+          <div class="net-diagram">IP Address:      192.168.1.10
+Subnet Mask:     255.255.255.0
+Default Gateway: 192.168.1.1
+DNS Server:      8.8.8.8</div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>Important interview point:</strong><br/>
+            A default gateway is <em>NOT required</em> to communicate with hosts on the <strong>same subnet</strong>.<br/>
+            It <em>IS required</em> to communicate with hosts on <strong>different subnets</strong> (including the Internet).</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 13: DNS & DHCP ── -->
+        <div class="note-block section-anchor" id="s13">
+          <h2 class="block-title"><span class="block-icon">&#128220;</span>13. DNS &amp; DHCP</h2>
+
+          <h4>DNS — Domain Name System</h4>
+          <p>DNS translates <strong>human-readable domain names into IP addresses</strong>. Without DNS, you'd have to remember IP addresses for every website.</p>
+          <div class="net-diagram">You type: google.com
+       ↓
+     DNS Query
+       ↓
+DNS Server resolves to: 142.250.195.46
+       ↓
+Your browser connects to that IP</div>
+          <p style="margin-top:14px;"><strong>Common DNS Record Types</strong> (study later):</p>
+          <table class="osi-table" style="margin-top:8px;">
+            <thead><tr><th>Record</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td>A</td><td>Maps domain → IPv4 address</td></tr>
+              <tr><td>AAAA</td><td>Maps domain → IPv6 address</td></tr>
+              <tr><td>CNAME</td><td>Alias — maps one domain to another</td></tr>
+              <tr><td>MX</td><td>Mail server for the domain</td></tr>
+              <tr><td>NS</td><td>Name servers for the domain</td></tr>
+              <tr><td>TXT</td><td>Arbitrary text (used for verification, SPF)</td></tr>
+            </tbody>
+          </table>
+
+          <h4 style="margin-top:26px;">DHCP — Dynamic Host Configuration Protocol</h4>
+          <p>DHCP <strong>automatically assigns network configuration</strong> to devices so you don't have to configure each one manually.</p>
+          <p style="margin-top:8px;">DHCP provides:</p>
+          <ul>
+            <li>IP address</li>
+            <li>Subnet mask</li>
+            <li>Default gateway</li>
+            <li>DNS server</li>
+          </ul>
+          <div class="callout callout-tip" style="margin-top:14px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>DORA — The 4-step DHCP process:</strong><br/>
+            <strong>D</strong>iscover → <strong>O</strong>ffer → <strong>R</strong>equest → <strong>A</strong>cknowledgment<br/>
+            The client broadcasts Discover → Server offers an IP → Client requests it → Server confirms.</div>
+          </div>
+          <div class="callout callout-note" style="margin-top:10px;">
+            <span class="callout-icon">&#9889;</span>
+            <div><strong>Protocol note:</strong> Both DNS and DHCP commonly use <strong>UDP</strong> (Layer 4). DNS uses port 53, DHCP uses ports 67/68.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 14: Important Ports ── -->
+        <div class="note-block section-anchor" id="s14">
+          <h2 class="block-title"><span class="block-icon">&#128297;</span>14. Important Port Numbers</h2>
+          <p>Start learning these now. You'll use them constantly when configuring firewalls and cloud security groups.</p>
+          <table class="osi-table" style="margin-top:14px;">
+            <thead><tr><th>Port</th><th>Protocol / Service</th><th>Typical Use</th></tr></thead>
+            <tbody>
+              <tr><td class="port-important">22</td><td>SSH</td><td>Secure remote administration (encrypted)</td></tr>
+              <tr><td class="port-important">23</td><td>Telnet</td><td>Remote access — <strong>insecure, avoid</strong></td></tr>
+              <tr><td>25</td><td>SMTP</td><td>Sending email</td></tr>
+              <tr><td class="port-important">53</td><td>DNS</td><td>Name resolution (UDP &amp; TCP)</td></tr>
+              <tr><td>67/68</td><td>DHCP</td><td>Dynamic IP addressing (UDP)</td></tr>
+              <tr><td class="port-important">80</td><td>HTTP</td><td>Unencrypted web traffic</td></tr>
+              <tr><td>110</td><td>POP3</td><td>Email retrieval (older)</td></tr>
+              <tr><td>143</td><td>IMAP</td><td>Email retrieval (modern)</td></tr>
+              <tr><td class="port-important">443</td><td>HTTPS</td><td>Secure encrypted web traffic</td></tr>
+              <tr><td>3389</td><td>RDP</td><td>Windows Remote Desktop Protocol</td></tr>
+            </tbody>
+          </table>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div>Don't just memorize — <em>understand</em> them. When you configure an AWS Security Group to allow HTTPS, you open port <strong>443 TCP</strong>. When you SSH into a server, you use port <strong>22 TCP</strong>.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 15: Ping & Commands ── -->
+        <div class="note-block section-anchor" id="s15">
+          <h2 class="block-title"><span class="block-icon">&#128187;</span>15. Ping &amp; Windows Commands</h2>
+
+          <h4>Ping</h4>
+          <p><code style="background:var(--lightest);padding:2px 8px;border-radius:4px;font-family:'Fira Code',monospace;">ping</code> uses <strong>ICMP Echo</strong> messages to test IP-level reachability.</p>
+          <div class="net-diagram">ping 8.8.8.8
+
+Reply from 8.8.8.8: bytes=32 time=15ms TTL=118
+↑ Host responded to ICMP Echo request</div>
+          <div class="callout callout-exam" style="margin-top:10px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>Critical interview point:</strong> Ping failing does <em>NOT always mean the destination is down</em>. A firewall may be blocking ICMP. Always verify with other methods.</div>
+          </div>
+
+          <h4 style="margin-top:20px;">Loopback Address</h4>
+          <p>IPv4 loopback: <code style="background:var(--lightest);padding:2px 8px;border-radius:4px;font-family:'Fira Code',monospace;">127.0.0.1</code> — tests your local TCP/IP stack without any network communication.</p>
+          <div class="net-diagram">ping 127.0.0.1
+→ Tests local TCP/IP stack (no network needed)
+→ If this fails, your TCP/IP stack has a problem</div>
+
+          <h4 style="margin-top:20px;">Essential Windows Commands</h4>
+          <table class="osi-table" style="margin-top:10px;">
+            <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>ipconfig</code></td><td>Shows basic IP configuration (IP, mask, gateway)</td></tr>
+              <tr><td><code>ipconfig /all</code></td><td>Full details — MAC, DHCP server, DNS servers, lease info</td></tr>
+              <tr><td><code>ping 192.168.1.1</code></td><td>Tests connectivity to a host using ICMP</td></tr>
+              <tr><td><code>tracert google.com</code></td><td>Traces the path (hop-by-hop) to a destination</td></tr>
+              <tr><td><code>nslookup google.com</code></td><td>Queries DNS — shows resolved IP for a domain</td></tr>
+              <tr><td><code>arp -a</code></td><td>Shows ARP cache (IP-to-MAC mappings on your LAN)</td></tr>
+              <tr><td><code>netstat</code></td><td>Shows active network connections and listening ports</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── SECTION 16: Troubleshooting ── -->
+        <div class="note-block section-anchor" id="s16">
+          <h2 class="block-title"><span class="block-icon">&#128295;</span>16. Basic Troubleshooting Method</h2>
+          <p>When a user says <em>"Internet is not working"</em> — use a <strong>structured approach</strong>, not random fixes.</p>
+
+          <div class="ts-flow" style="margin-top:18px;">
+            <div class="ts-step"><span class="ts-icon">&#128270;</span><div><strong>Step 1:</strong> Understand the problem — ask questions, reproduce it</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128246;</span><div><strong>Step 2:</strong> Check physical / Wi-Fi connection</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128187;</span><div><strong>Step 3:</strong> Run <code>ipconfig /all</code> — check IP, mask, gateway, DNS</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#9889;</span><div><strong>Step 4:</strong> <code>ping 127.0.0.1</code> — test local TCP/IP stack</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128225;</span><div><strong>Step 5:</strong> <code>ping &lt;default-gateway&gt;</code> — test LAN connectivity</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#127760;</span><div><strong>Step 6:</strong> <code>ping 8.8.8.8</code> — test Internet connectivity (bypasses DNS)</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128220;</span><div><strong>Step 7:</strong> <code>nslookup google.com</code> — test DNS resolution</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#127760;</span><div><strong>Step 8:</strong> Test the actual application/website in browser</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128295;</span><div><strong>Step 9:</strong> Identify root cause and fix it</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#9989;</span><div><strong>Step 10:</strong> Verify the fix works</div></div>
+            <div class="ts-arrow"></div>
+            <div class="ts-step"><span class="ts-icon">&#128196;</span><div><strong>Step 11:</strong> Document what you found and fixed</div></div>
+          </div>
+
+          <h4 style="margin-top:28px;">&#128221; Troubleshooting Example</h4>
+          <p>User says: <em>"Wi-Fi is connected but Google isn't opening."</em></p>
+          <div class="net-diagram" style="margin-top:12px;">Ping gateway → SUCCESS   ✓ (LAN is fine)
+Ping 8.8.8.8  → SUCCESS   ✓ (Internet is reachable)
+nslookup      → FAIL      ✗ (DNS not resolving)
+
+Diagnosis: DNS issue — not a network connectivity problem.
+Fix: Change DNS server to 8.8.8.8 or check DNS server config.</div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div>This troubleshooting mindset — logical, step-by-step isolation — is one of the most valuable skills in cloud networking. Interviewers test this heavily.</div>
+          </div>
+        </div>
+
+        <!-- ── SECTION 17: Key Concepts Summary ── -->
+        <div class="note-block section-anchor" id="s17">
+          <h2 class="block-title"><span class="block-icon">&#9989;</span>17. Key Concepts — Relationships to Memorize</h2>
+          <div class="mini-relation">
+            <div class="mini-rel-card">
+              <div class="mrc-top">MAC</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-mid">Layer 2</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-bot">Switch</div>
+            </div>
+            <div class="mini-rel-card">
+              <div class="mrc-top">IP</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-mid">Layer 3</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-bot">Router</div>
+            </div>
+            <div class="mini-rel-card">
+              <div class="mrc-top">TCP / UDP</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-mid">Layer 4</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-bot">Transport</div>
+            </div>
+            <div class="mini-rel-card">
+              <div class="mrc-top">HTTP/DNS/SSH</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-mid">Layer 7</div>
+              <div class="mrc-arrow">&#8595;</div>
+              <div class="mrc-bot">Application</div>
+            </div>
+          </div>
+          <div class="callout callout-tip" style="margin-top:20px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Host network config — 4 essentials:</strong><br/>
+            IP address &nbsp;+&nbsp; Subnet mask &nbsp;+&nbsp; Default gateway &nbsp;+&nbsp; DNS server<br/>
+            These 4 things must be correct for a device to communicate on the network and Internet.</div>
+          </div>
+        </div>
+
+        <!-- ── PRACTICAL LAB ── -->
+        <div class="note-block section-anchor" id="lab" style="border-color: rgba(74,222,128,0.4);">
+          <h2 class="block-title" style="color:#16a34a;"><span class="block-icon">&#128299;</span>Day 1 Practical Lab</h2>
+          <p>Open <strong>Windows Command Prompt</strong> and run the following commands. Record your results.</p>
+
+          <div style="margin-top:20px;">
+            <div class="lab-step">
+              <div class="lab-step-num">1</div>
+              <div class="lab-step-body">
+                <h4>Run ipconfig /all</h4>
+                <div class="net-diagram" style="margin-top:8px;">ipconfig /all</div>
+                <p>Identify and note down: IPv4 Address, Subnet Mask, Default Gateway, DNS Servers, MAC address (Physical Address)</p>
+              </div>
+            </div>
+            <div class="lab-step">
+              <div class="lab-step-num">2</div>
+              <div class="lab-step-body">
+                <h4>Test local TCP/IP stack</h4>
+                <div class="net-diagram" style="margin-top:8px;">ping 127.0.0.1</div>
+                <p>Expected: 4 replies. Confirms your TCP/IP stack is working.</p>
+              </div>
+            </div>
+            <div class="lab-step">
+              <div class="lab-step-num">3</div>
+              <div class="lab-step-body">
+                <h4>Test LAN connectivity — ping your default gateway</h4>
+                <div class="net-diagram" style="margin-top:8px;">ping &lt;your-default-gateway&gt;
+Example: ping 192.168.1.1</div>
+                <p>Expected: replies from your router. Confirms LAN is working.</p>
+              </div>
+            </div>
+            <div class="lab-step">
+              <div class="lab-step-num">4</div>
+              <div class="lab-step-body">
+                <h4>Test Internet connectivity</h4>
+                <div class="net-diagram" style="margin-top:8px;">ping 8.8.8.8</div>
+                <p>Google's DNS server. Success = you have Internet connectivity.</p>
+              </div>
+            </div>
+            <div class="lab-step">
+              <div class="lab-step-num">5</div>
+              <div class="lab-step-body">
+                <h4>Test DNS resolution</h4>
+                <div class="net-diagram" style="margin-top:8px;">nslookup google.com</div>
+                <p>Shows the IP address that DNS resolved for google.com. Success = DNS is working.</p>
+              </div>
+            </div>
+          </div>
+          <div class="callout callout-note" style="margin-top:14px;">
+            <span class="callout-icon">&#128274;</span>
+            <div>Do <strong>not</strong> share public IP addresses or confidential company network information.</div>
+          </div>
+        </div>
+
+        <!-- ── INTERVIEW QUESTIONS ── -->
+        <div class="note-block section-anchor" id="iq" style="border-color: rgba(250,204,21,0.5);">
+          <h2 class="block-title" style="color:#b45309;"><span class="block-icon">&#127908;</span>Day 1 Interview Questions</h2>
+          <p style="margin-bottom:18px;">Try answering these <strong>without looking at the notes</strong> first.</p>
+          <ul class="iq-list">
+            <li>What is a computer network?</li>
+            <li>What is the difference between a switch and a router?</li>
+            <li>How many layers are in the OSI model?</li>
+            <li>Which OSI layer is IP associated with?</li>
+            <li>Which OSI layer is MAC associated with?</li>
+            <li>What is an IPv4 address?</li>
+            <li>What is a default gateway?</li>
+            <li>What is DNS?</li>
+            <li>What is the difference between a private IP and a public IP?</li>
+            <li>What does ping test?</li>
+            <li>What is the difference between TCP and UDP?</li>
+            <li>What is DHCP?</li>
+            <li>What is the difference between a MAC address and an IP address?</li>
+            <li>What happens when a computer wants to communicate with a device outside its local subnet?</li>
+            <li>A user has Wi-Fi connectivity but cannot open websites. How would you troubleshoot it?</li>
+          </ul>
+        </div>
+
+        <!-- ── CHALLENGE ── -->
+        <div class="note-block section-anchor" id="challenge">
+          <h2 class="block-title"><span class="block-icon">&#129504;</span>Day 1 Challenge</h2>
+          <p>Study this network diagram and answer the questions in your own words:</p>
+          <div class="net-diagram" style="margin:14px 0;">                 INTERNET
+                    │
+                 ROUTER
+              192.168.1.1
+                    │
+                 SWITCH
+              /     |      \
+           PC1     PC2     Printer
+       192.168.1.10</div>
+          <div class="challenge-box" style="margin-top:16px;">
+            <h3>&#10067; Answer these:</h3>
+            <ul class="challenge-list">
+              <li>What device connects the PCs to each other?</li>
+              <li>What device connects the LAN to another network (the Internet)?</li>
+              <li>What address does PC1 use at Layer 3 (Network layer)?</li>
+              <li>What address does Ethernet use at Layer 2 (Data Link layer)?</li>
+              <li>What is PC1's default gateway?</li>
+              <li>What happens if PC1 wants to access a server on another network?</li>
+              <li>What happens if DNS is not working — can PC1 still reach the Internet?</li>
+            </ul>
+          </div>
+          <div class="callout callout-tip" style="margin-top:16px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Hint for Q7:</strong> Try <code>ping 8.8.8.8</code> vs <code>nslookup google.com</code>. If ping works but nslookup fails, what does that tell you?</div>
+          </div>
+        </div>
+
+              <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day1">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 1 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">Networking Fundamentals</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 7 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain LAN vs WAN vs MAN and give real-world examples</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Describe all 7 layers of the OSI Model and their primary functions</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain the TCP/IP 4-layer model and map it to the OSI model</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Differentiate between IP address (Layer 3) and Port number (Layer 4)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain the role of a Default Gateway in local vs remote network routing</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Compare Hub, Switch, and Router architectures and broadcast domain behaviors</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Run and interpret Windows networking commands: ipconfig /all and ping</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 1 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- ── SIDEBAR ── -->
+      <aside class="note-sidebar">
+
+        <!-- Progress -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 1 Progress</div>
+          <div>
+            <div class="progress-item">
+              <span>Sections Read</span>
+              <span style="color:var(--primary);font-weight:600;">17 topics</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item">
+              <span>Lab</span>
+              <span style="color:#16a34a;font-weight:600;">&#128299; Do it!</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item">
+              <span>Phase 1 Overall</span>
+              <span style="color:var(--primary);font-weight:600;">~10%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" data-width="10" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- OSI Quick Ref -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; OSI Quick Ref</div>
+          <ul class="key-terms-list">
+            <li><strong>L7 Application</strong> HTTP, HTTPS, DNS, SSH, FTP, SMTP</li>
+            <li><strong>L6 Presentation</strong> Encryption, encoding, format</li>
+            <li><strong>L5 Session</strong> Session establish/terminate</li>
+            <li><strong>L4 Transport</strong> TCP (reliable) / UDP (fast)</li>
+            <li><strong>L3 Network</strong> IP addresses, Routing</li>
+            <li><strong>L2 Data Link</strong> MAC, Ethernet, Switches</li>
+            <li><strong>L1 Physical</strong> Cables, signals, bits</li>
+          </ul>
+        </div>
+
+        <!-- Key Terms -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128216; Key Terms</div>
+          <ul class="key-terms-list">
+            <li><strong>Switch</strong> L2 device, uses MAC addresses</li>
+            <li><strong>Router</strong> L3 device, uses IP addresses</li>
+            <li><strong>MAC Address</strong> 48-bit hardware identifier (L2)</li>
+            <li><strong>IP Address</strong> 32-bit logical identifier (L3)</li>
+            <li><strong>Default Gateway</strong> Router for off-subnet traffic</li>
+            <li><strong>DNS</strong> Resolves names → IP addresses</li>
+            <li><strong>DHCP</strong> Auto-assigns IP config (DORA)</li>
+            <li><strong>Private IP</strong> 10.x, 172.16-31.x, 192.168.x</li>
+            <li><strong>Subnet Mask</strong> Separates network / host bits</li>
+            <li><strong>Loopback</strong> 127.0.0.1 — local stack test</li>
+          </ul>
+        </div>
+
+        <!-- Important Ports Quick -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128297; Key Ports</div>
+          <ul class="key-terms-list">
+            <li><strong>22</strong> SSH (secure remote)</li>
+            <li><strong>23</strong> Telnet (insecure!)</li>
+            <li><strong>53</strong> DNS</li>
+            <li><strong>67/68</strong> DHCP</li>
+            <li><strong>80</strong> HTTP</li>
+            <li><strong>443</strong> HTTPS</li>
+            <li><strong>3389</strong> RDP</li>
+          </ul>
+        </div>
+
+        <!-- Navigation -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="color:var(--text-muted);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);">
+              &#8592; No previous day
+            </span>
+            <a href="day2.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8594; Day 2: IPv4 Addressing &amp; Subnetting
+            </a>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon">&#9729;</span>
+          <span>The Way of <strong>Dreams</strong></span>
+        </div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

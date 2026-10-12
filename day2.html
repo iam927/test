@@ -1,0 +1,968 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 2 – IPv4 Addressing & Subnetting | The Way of Dreams</title>
+  <meta name="description" content="Day 2 notes: IPv4 addressing, binary conversion, subnet masks, CIDR notation, block-size subnetting method, practice questions and interview prep." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── DAY 2 EXTRA STYLES ── */
+    .toc-card {
+      background: linear-gradient(135deg, rgba(61,82,160,0.07), rgba(112,145,230,0.12));
+      border: 1.5px solid rgba(112,145,230,0.3);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
+    .toc-card h3 { font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+    .toc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
+    .toc-list li a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:7px; transition:var(--transition); padding:3px 0; }
+    .toc-list li a:hover { color:var(--primary); padding-left:4px; }
+    .toc-list li a .toc-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-size:0.68rem; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    @media(max-width:600px){ .toc-list{grid-template-columns:1fr;} }
+
+    /* Binary diagram */
+    .net-diagram { background:var(--dark); border-radius:var(--radius-md); padding:22px 24px; margin:14px 0; font-family:'Fira Code','Courier New',monospace; font-size:0.83rem; color:var(--soft); line-height:1.9; border:1px solid rgba(112,145,230,0.2); overflow-x:auto; white-space:pre; }
+
+    /* Binary bit visualiser */
+    .bit-row { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0; }
+    .bit-cell { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .bit-val { width:38px; height:38px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-family:'Fira Code',monospace; font-size:1rem; font-weight:700; border:2px solid rgba(112,145,230,0.3); transition:var(--transition); }
+    .bit-val.on  { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; border-color:var(--secondary); box-shadow:0 0 12px rgba(112,145,230,0.4); }
+    .bit-val.off { background:rgba(173,187,218,0.15); color:var(--steel); }
+    .bit-pos { font-size:0.7rem; color:var(--steel); font-family:'Fira Code',monospace; }
+
+    /* Formula box */
+    .formula-box { background:linear-gradient(135deg,rgba(61,82,160,0.1),rgba(112,145,230,0.15)); border:2px solid rgba(112,145,230,0.35); border-radius:var(--radius-md); padding:20px 24px; text-align:center; margin:16px 0; }
+    .formula-box .formula { font-family:'Fira Code',monospace; font-size:1.3rem; font-weight:700; color:var(--primary); }
+    .formula-box .formula-desc { font-size:0.85rem; color:var(--text-muted); margin-top:6px; }
+
+    /* Step-by-step solver */
+    .solver { border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-lg); overflow:hidden; margin:16px 0; }
+    .solver-header { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; padding:14px 20px; font-family:'Outfit',sans-serif; font-weight:700; font-size:1rem; display:flex; align-items:center; gap:10px; }
+    .solver-step { display:flex; align-items:flex-start; gap:16px; padding:16px 20px; border-bottom:1px solid rgba(173,187,218,0.25); background:white; }
+    .solver-step:last-child { border-bottom:none; }
+    .solver-step-num { width:28px; height:28px; min-width:28px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.78rem; display:flex; align-items:center; justify-content:center; }
+    .solver-step-body { flex:1; }
+    .solver-step-body h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.9rem; margin-bottom:4px; }
+    .solver-step-body p { font-size:0.85rem; color:var(--text-muted); line-height:1.6; }
+    .solver-step-body .code { font-family:'Fira Code',monospace; background:var(--lightest); padding:2px 8px; border-radius:4px; font-size:0.82rem; }
+    .solver-result { background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(74,222,128,0.15)); padding:18px 20px; }
+    .solver-result table { width:100%; border-collapse:collapse; }
+    .solver-result td { padding:6px 12px; font-size:0.87rem; }
+    .solver-result td:first-child { color:var(--text-muted); width:140px; }
+    .solver-result td:last-child { font-family:'Fira Code',monospace; color:var(--primary); font-weight:600; }
+
+    /* Block size visual */
+    .blocks-visual { display:flex; gap:0; flex-wrap:wrap; margin:14px 0; border-radius:var(--radius-md); overflow:hidden; border:1.5px solid rgba(112,145,230,0.25); }
+    .block-item { flex:1; min-width:80px; padding:12px 8px; text-align:center; border-right:1px solid rgba(112,145,230,0.2); font-size:0.78rem; transition:var(--transition); }
+    .block-item:last-child { border-right:none; }
+    .block-item.highlight { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+    .block-item:not(.highlight) { background:rgba(237,232,245,0.6); color:var(--text-muted); }
+    .block-item .bl-range { font-family:'Fira Code',monospace; font-weight:700; font-size:0.75rem; }
+    .block-item .bl-label { font-size:0.68rem; margin-top:4px; }
+
+    /* Practice Q card */
+    .practice-q { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-lg); padding:24px; margin-bottom:16px; }
+    .practice-q-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .practice-q-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.8rem; padding:4px 14px; border-radius:99px; }
+    .practice-q-ip { font-family:'Fira Code',monospace; font-size:1.1rem; font-weight:600; color:var(--primary); }
+    .answer-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .answer-row { background:var(--lightest); border-radius:var(--radius-sm); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border-left:3px solid var(--secondary); }
+    .answer-row .ar-label { color:var(--text-muted); }
+    .answer-row .ar-val { font-family:'Fira Code',monospace; color:var(--primary); font-weight:600; }
+    @media(max-width:600px){ .answer-grid{grid-template-columns:1fr;} }
+
+    /* Interview Qs */
+    .iq-list { list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:iq-counter; }
+    .iq-list li { counter-increment:iq-counter; background:var(--lightest); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:12px 16px; font-size:0.92rem; color:var(--text-muted); position:relative; padding-left:48px; }
+    .iq-list li::before { content:"Q" counter(iq-counter); position:absolute; left:12px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.75rem; color:var(--secondary); }
+
+    /* Key points flow */
+    .kp-flow { display:flex; flex-direction:column; align-items:center; gap:0; margin-top:14px; }
+    .kp-item { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.14)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-md); padding:12px 32px; text-align:center; font-family:'Fira Code',monospace; font-weight:600; color:var(--primary); font-size:0.9rem; width:fit-content; min-width:220px; }
+    .kp-arrow { font-size:1.3rem; color:var(--secondary); margin:2px 0; }
+
+    /* Section anchor */
+    .section-anchor { scroll-margin-top: 90px; }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- BACK BAR -->
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <!-- DAY HERO -->
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128218; Day 2 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">IPv4 Addressing &amp; Subnetting</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 2 of the journey</span>
+        <span>&#9203; ~60 min read</span>
+        <span>&#127891; Theory + Practice</span>
+        <span>&#128100; 15 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">IPv4</span>
+        <span class="day-tag">Binary</span>
+        <span class="day-tag">Subnet Mask</span>
+        <span class="day-tag">CIDR</span>
+        <span class="day-tag">Network Address</span>
+        <span class="day-tag">Broadcast</span>
+        <span class="day-tag">Block Size Method</span>
+        <span class="day-tag">Subnetting</span>
+        <span class="day-tag">Cloud VPC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE LAYOUT -->
+  <div class="container">
+    <div class="note-layout">
+
+      <!-- ── MAIN CONTENT ── -->
+      <main class="note-main">
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents — Day 2</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>What is IPv4?</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>Bits &amp; Bytes</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>Binary Octet Values</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>Binary ↔ Decimal</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>IPv4 Address Structure</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>Subnet Mask</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>CIDR Notation</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>Common CIDR Table</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>Network &amp; Host Bits</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>Network Address</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>Broadcast Address</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Usable Host Range</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>Host Calculation Formula</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>Host Calcs /24–/27</a></li>
+            <li><a href="#s15"><span class="toc-num">15</span>Subnet Reference Table</a></li>
+            <li><a href="#s16"><span class="toc-num">16</span>What is Subnetting?</a></li>
+            <li><a href="#s17"><span class="toc-num">17</span>Why Subnet?</a></li>
+            <li><a href="#s18"><span class="toc-num">18</span>Block Size Method</a></li>
+            <li><a href="#s19"><span class="toc-num">19</span>Worked Example 2</a></li>
+            <li><a href="#s20"><span class="toc-num">20</span>Cloud VPC Connection</a></li>
+            <li><a href="#practice"><span class="toc-num">&#128299;</span>Practice Problems</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>Interview Questions</a></li>
+            <li><a href="#keypoints"><span class="toc-num">&#11088;</span>Key Points</a></li>
+          </ul>
+        </div>
+
+        <!-- ── S1: What is IPv4 ── -->
+        <div class="note-block section-anchor" id="s1">
+          <h2 class="block-title"><span class="block-icon">&#127758;</span>1. What is IPv4?</h2>
+          <p><strong>IPv4 = Internet Protocol version 4</strong></p>
+          <p>IPv4 is an addressing system used to identify interfaces on an IP network. An IPv4 address contains <strong>32 bits</strong>, divided into <strong>4 octets</strong>.</p>
+          <div class="net-diagram">192  .  168  .  1   .  10
+ ↑        ↑       ↑      ↑
+8 bits  8 bits  8 bits  8 bits
+
+8 + 8 + 8 + 8 = 32 bits total</div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">&#128161;</span>
+            <div>Every device on an IP network needs a unique IPv4 address to communicate. In cloud (AWS, Azure, GCP), every virtual machine, container and subnet gets an IP address.</div>
+          </div>
+        </div>
+
+        <!-- ── S2: Bits & Bytes ── -->
+        <div class="note-block section-anchor" id="s2">
+          <h2 class="block-title"><span class="block-icon">&#9889;</span>2. Bits &amp; Bytes</h2>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="cc-icon">0️⃣1️⃣</div>
+              <div class="cc-title">Bit</div>
+              <div class="cc-desc">Smallest unit of binary data. Can only be <strong>0</strong> or <strong>1</strong>.</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128221;</div>
+              <div class="cc-title">Byte</div>
+              <div class="cc-desc"><strong>8 bits</strong> = 1 byte. Each IPv4 octet is 1 byte.</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#127758;</div>
+              <div class="cc-title">IPv4</div>
+              <div class="cc-desc"><strong>32 bits</strong> = 4 bytes = 4 octets.</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128200;</div>
+              <div class="cc-title">Octet</div>
+              <div class="cc-desc">One group of 8 bits. Range: <strong>0–255</strong>.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── S3: Binary Octet Values ── -->
+        <div class="note-block section-anchor" id="s3">
+          <h2 class="block-title"><span class="block-icon">&#128202;</span>3. Binary Positional Values of an Octet</h2>
+          <p>Every IPv4 octet has 8 bit positions. Each position has a <strong>power-of-2 value</strong>:</p>
+          <div class="bit-row">
+            <div class="bit-cell"><div class="bit-val on">1</div><div class="bit-pos">128</div></div>
+            <div class="bit-cell"><div class="bit-val on">1</div><div class="bit-pos">64</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">32</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">16</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">8</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">4</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">2</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">1</div></div>
+          </div>
+          <p>The lit (blue) bits are <code>1</code>. Add up only the positions where a bit is <code>1</code>:</p>
+          <div class="net-diagram">11000000 = 128 + 64 = 192    ✓  (first octet of 192.168.x.x)</div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Memorise the 8 positions:</strong> 128 · 64 · 32 · 16 · 8 · 4 · 2 · 1<br/>
+            Notice: each is double the previous (1 → 2 → 4 → 8 … → 128).</div>
+          </div>
+        </div>
+
+        <!-- ── S4: Binary ↔ Decimal ── -->
+        <div class="note-block section-anchor" id="s4">
+          <h2 class="block-title"><span class="block-icon">&#128260;</span>4. Binary ↔ Decimal Conversion</h2>
+
+          <h4>Example — convert 10101000 to decimal</h4>
+          <div class="bit-row">
+            <div class="bit-cell"><div class="bit-val on">1</div><div class="bit-pos">128</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">64</div></div>
+            <div class="bit-cell"><div class="bit-val on">1</div><div class="bit-pos">32</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">16</div></div>
+            <div class="bit-cell"><div class="bit-val on">1</div><div class="bit-pos">8</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">4</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">2</div></div>
+            <div class="bit-cell"><div class="bit-val off">0</div><div class="bit-pos">1</div></div>
+          </div>
+          <div class="net-diagram">Active bits:  128 + 32 + 8 = 168
+Result:       10101000 = 168</div>
+
+          <h4 style="margin-top:22px;">Full IPv4 in binary</h4>
+          <div class="net-diagram">192  .  168  .    1   .   10
+  ↓         ↓         ↓        ↓
+11000000.10101000.00000001.00001010</div>
+
+          <div class="callout callout-note">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>Practice tip:</strong> Use Windows Calculator → Programmer mode to practice converting between decimal and binary until it becomes second nature.</div>
+          </div>
+        </div>
+
+        <!-- ── S5: IPv4 Structure ── -->
+        <div class="note-block section-anchor" id="s5">
+          <h2 class="block-title"><span class="block-icon">&#128203;</span>5. IPv4 Address Structure</h2>
+          <p>An IPv4 address has two logical parts:</p>
+          <div class="net-diagram">NETWORK PORTION  |  HOST PORTION</div>
+          <div class="net-diagram">Example:  192.168.1.10/24
+
+192.168.1   |   10
+ NETWORK    |   HOST
+
+/24 → first 24 bits = network
+     last  8 bits = host
+     (32 - 24 = 8)</div>
+          <div class="callout callout-exam">
+            <span class="callout-icon">&#127891;</span>
+            <div>The prefix length (e.g. <strong>/24</strong>) tells you exactly how many bits are the <em>network</em> part. The rest are the <em>host</em> part. This is the foundation of all subnetting.</div>
+          </div>
+        </div>
+
+        <!-- ── S6: Subnet Mask ── -->
+        <div class="note-block section-anchor" id="s6">
+          <h2 class="block-title"><span class="block-icon">&#127956;</span>6. Subnet Mask</h2>
+          <p>A <strong>subnet mask</strong> identifies which bits of an IPv4 address belong to the <strong>network</strong> portion and which belong to the <strong>host</strong> portion.</p>
+          <div class="net-diagram">IP Address:   192.168.1.10
+Subnet Mask:  255.255.255.0
+
+Binary subnet mask:
+11111111.11111111.11111111.00000000
+&lt;——————— NETWORK ————————&gt;&lt;— HOST —&gt;
+
+The 1s = NETWORK bits
+The 0s = HOST bits</div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">&#128161;</span>
+            <div>Notice: 255 in binary = <code>11111111</code> (all 1s = all network bits). 0 in binary = <code>00000000</code> (all 0s = all host bits). This is why <strong>/24 = 255.255.255.0</strong>.</div>
+          </div>
+        </div>
+
+        <!-- ── S7: CIDR ── -->
+        <div class="note-block section-anchor" id="s7">
+          <h2 class="block-title"><span class="block-icon">&#128200;</span>7. CIDR Notation</h2>
+          <p><strong>CIDR = Classless Inter-Domain Routing</strong></p>
+          <p>CIDR notation represents the number of network bits using a <strong>slash</strong> after the IP address.</p>
+          <div class="net-diagram">192.168.1.10/24
+              ↑
+              /24 = 24 network bits
+                    8 host bits (32-24=8)</div>
+          <div class="callout callout-exam">
+            <span class="callout-icon">&#127891;</span>
+            <div>CIDR replaces the old "classful" system (Class A/B/C). Modern networking — and all cloud platforms — use CIDR exclusively. Always think in CIDR.</div>
+          </div>
+        </div>
+
+        <!-- ── S8: Common CIDR Table ── -->
+        <div class="note-block section-anchor" id="s8">
+          <h2 class="block-title"><span class="block-icon">&#128203;</span>8. Common CIDR &amp; Subnet Masks</h2>
+          <p>Memorise these — especially <strong>/24 through /30</strong> for day-to-day cloud work.</p>
+          <table class="osi-table" style="margin-top:14px;">
+            <thead><tr><th>CIDR</th><th>Subnet Mask</th><th>Host Bits</th><th>Total Addresses</th><th>Usable Hosts</th></tr></thead>
+            <tbody>
+              <tr><td>/8</td><td>255.0.0.0</td><td>24</td><td>16,777,216</td><td>16,777,214</td></tr>
+              <tr><td>/16</td><td>255.255.0.0</td><td>16</td><td>65,536</td><td>65,534</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/24</td><td>255.255.255.0</td><td>8</td><td>256</td><td>254</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/25</td><td>255.255.255.128</td><td>7</td><td>128</td><td>126</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/26</td><td>255.255.255.192</td><td>6</td><td>64</td><td>62</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/27</td><td>255.255.255.224</td><td>5</td><td>32</td><td>30</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/28</td><td>255.255.255.240</td><td>4</td><td>16</td><td>14</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/29</td><td>255.255.255.248</td><td>3</td><td>8</td><td>6</td></tr>
+              <tr style="background:rgba(112,145,230,0.07);font-weight:600;"><td>/30</td><td>255.255.255.252</td><td>2</td><td>4</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── S9: Network & Host Bits ── -->
+        <div class="note-block section-anchor" id="s9">
+          <h2 class="block-title"><span class="block-icon">&#128274;</span>9. Network Bits vs Host Bits</h2>
+          <div class="net-diagram">192.168.1.10/24
+
+Network portion: 192.168.1  (24 bits)
+Host portion:    10          (8 bits)
+
+192.168.1  |  10
+NETWORK    |  HOST
+(identifies (identifies a
+ the subnet) device in that subnet)</div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">&#128161;</span>
+            <div>All devices in the <strong>same subnet</strong> share the same network portion. Only the host portion differs. E.g. 192.168.1.10 and 192.168.1.20 are in the same /24 subnet.</div>
+          </div>
+        </div>
+
+        <!-- ── S10: Network Address ── -->
+        <div class="note-block section-anchor" id="s10">
+          <h2 class="block-title"><span class="block-icon">&#127968;</span>10. Network Address</h2>
+          <p>The <strong>network address</strong> is the <em>first</em> address in a subnet. All host bits are set to <strong>0</strong>. It identifies the subnet itself — it cannot be assigned to a host.</p>
+          <div class="net-diagram">IP:      192.168.1.10/24
+Network: 192.168.1.0     ← host bits all zero
+                  ↑
+              this is 0, not 10</div>
+          <div class="callout callout-exam">
+            <span class="callout-icon">&#127891;</span>
+            <div>The network address = <strong>cannot be used</strong> as a host address. This is one of the "2" subtracted in the formula <code>2^n - 2</code>.</div>
+          </div>
+        </div>
+
+        <!-- ── S11: Broadcast ── -->
+        <div class="note-block section-anchor" id="s11">
+          <h2 class="block-title"><span class="block-icon">&#128225;</span>11. Broadcast Address</h2>
+          <p>The <strong>broadcast address</strong> is the <em>last</em> address in a subnet. All host bits are set to <strong>1</strong>. It cannot be assigned to a host.</p>
+          <div class="net-diagram">Subnet:    192.168.1.0/24
+
+Network:   192.168.1.0    ← first (host bits = 0)
+Broadcast: 192.168.1.255  ← last  (host bits = all 1s = 255)</div>
+          <div class="callout callout-exam">
+            <span class="callout-icon">&#127891;</span>
+            <div>The broadcast address = <strong>cannot be used</strong> as a host address. This is the second "1" subtracted in <code>2^n - 2</code>.</div>
+          </div>
+        </div>
+
+        <!-- ── S12: Usable Host Range ── -->
+        <div class="note-block section-anchor" id="s12">
+          <h2 class="block-title"><span class="block-icon">&#128101;</span>12. Usable Host Range</h2>
+          <p>The usable hosts are all addresses <strong>between</strong> the network address and the broadcast address.</p>
+          <div class="net-diagram">Subnet:       192.168.1.0/24
+
+Network:      192.168.1.0    ✗ (cannot use)
+First usable: 192.168.1.1    ✓
+Last usable:  192.168.1.254  ✓
+Broadcast:    192.168.1.255  ✗ (cannot use)
+
+Usable range: 192.168.1.1 – 192.168.1.254</div>
+        </div>
+
+        <!-- ── S13: Host Calculation ── -->
+        <div class="note-block section-anchor" id="s13">
+          <h2 class="block-title"><span class="block-icon">&#129518;</span>13. Host Calculation Formula</h2>
+          <div class="formula-box">
+            <div class="formula">Usable hosts = 2<sup>host bits</sup> &minus; 2</div>
+            <div class="formula-desc">Subtract 2 for the Network Address and the Broadcast Address</div>
+          </div>
+          <div class="callout callout-tip">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Steps:</strong><br/>
+            1. Find host bits = 32 &minus; prefix length<br/>
+            2. Calculate 2^(host bits)<br/>
+            3. Subtract 2</div>
+          </div>
+        </div>
+
+        <!-- ── S14: Host Calcs ── -->
+        <div class="note-block section-anchor" id="s14">
+          <h2 class="block-title"><span class="block-icon">&#128290;</span>14. Host Calculations — /24 to /27</h2>
+          <table class="osi-table" style="margin-top:10px;">
+            <thead><tr><th>CIDR</th><th>Host bits (32-n)</th><th>2^n</th><th>Usable (2^n &minus; 2)</th></tr></thead>
+            <tbody>
+              <tr><td>/24</td><td>32&minus;24 = <strong>8</strong></td><td>2⁸ = 256</td><td><strong>254</strong></td></tr>
+              <tr><td>/25</td><td>32&minus;25 = <strong>7</strong></td><td>2⁷ = 128</td><td><strong>126</strong></td></tr>
+              <tr><td>/26</td><td>32&minus;26 = <strong>6</strong></td><td>2⁶ = 64</td><td><strong>62</strong></td></tr>
+              <tr><td>/27</td><td>32&minus;27 = <strong>5</strong></td><td>2⁵ = 32</td><td><strong>30</strong></td></tr>
+              <tr><td>/28</td><td>32&minus;28 = <strong>4</strong></td><td>2⁴ = 16</td><td><strong>14</strong></td></tr>
+              <tr><td>/29</td><td>32&minus;29 = <strong>3</strong></td><td>2³ = 8</td><td><strong>6</strong></td></tr>
+              <tr><td>/30</td><td>32&minus;30 = <strong>2</strong></td><td>2² = 4</td><td><strong>2</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── S15: Subnet Reference Table ── -->
+        <div class="note-block section-anchor" id="s15">
+          <h2 class="block-title"><span class="block-icon">&#128203;</span>15. Complete Subnet Reference Table</h2>
+          <table class="osi-table" style="margin-top:10px;">
+            <thead><tr><th>CIDR</th><th>Subnet Mask</th><th>Block Size</th><th>Total</th><th>Usable</th></tr></thead>
+            <tbody>
+              <tr><td>/24</td><td>255.255.255.0</td><td>256</td><td>256</td><td>254</td></tr>
+              <tr><td>/25</td><td>255.255.255.128</td><td>128</td><td>128</td><td>126</td></tr>
+              <tr><td>/26</td><td>255.255.255.192</td><td>64</td><td>64</td><td>62</td></tr>
+              <tr><td>/27</td><td>255.255.255.224</td><td>32</td><td>32</td><td>30</td></tr>
+              <tr><td>/28</td><td>255.255.255.240</td><td>16</td><td>16</td><td>14</td></tr>
+              <tr><td>/29</td><td>255.255.255.248</td><td>8</td><td>8</td><td>6</td></tr>
+              <tr><td>/30</td><td>255.255.255.252</td><td>4</td><td>4</td><td>2</td></tr>
+            </tbody>
+          </table>
+          <div class="callout callout-tip" style="margin-top:14px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Block Size = 256 &minus; last octet of subnet mask.</strong><br/>
+            /26 mask = 255.255.255.<strong>192</strong> → Block size = 256&minus;192 = <strong>64</strong>. This is the key to the block-size subnetting method!</div>
+          </div>
+        </div>
+
+        <!-- ── S16: What is Subnetting ── -->
+        <div class="note-block section-anchor" id="s16">
+          <h2 class="block-title"><span class="block-icon">&#127963;</span>16. What is Subnetting?</h2>
+          <p><strong>Subnetting</strong> means dividing a <em>larger</em> IP network into <em>smaller</em> sub-networks (subnets).</p>
+          <div class="net-diagram">Original: 192.168.1.0/24  (one network)
+
+Subnetted into four /26 subnets:
+  192.168.1.0/26    → hosts .1  – .62
+  192.168.1.64/26   → hosts .65 – .126
+  192.168.1.128/26  → hosts .129– .190
+  192.168.1.192/26  → hosts .193– .254</div>
+        </div>
+
+        <!-- ── S17: Why Subnet ── -->
+        <div class="note-block section-anchor" id="s17">
+          <h2 class="block-title"><span class="block-icon">&#129300;</span>17. Why Do We Use Subnetting?</h2>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="cc-icon">&#127970;</div>
+              <div class="cc-title">Organisation</div>
+              <div class="cc-desc">Separate departments — IT, HR, Finance, Servers, Guest</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128274;</div>
+              <div class="cc-title">Security</div>
+              <div class="cc-desc">Segmentation controls traffic between groups (firewall between subnets)</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128200;</div>
+              <div class="cc-title">IP Management</div>
+              <div class="cc-desc">Use address space efficiently — give each group only what it needs</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#9729;</div>
+              <div class="cc-title">Cloud VPC</div>
+              <div class="cc-desc">AWS/Azure VPCs are divided into subnets for public, private, DB tiers</div>
+            </div>
+          </div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>Cloud example:</strong> An AWS VPC <code>10.0.0.0/16</code> is typically divided into:<br/>
+            Public subnet (10.0.1.0/24) → web servers<br/>
+            Private subnet (10.0.2.0/24) → app servers<br/>
+            DB subnet (10.0.3.0/24) → databases</div>
+          </div>
+        </div>
+
+        <!-- ── S18: Block Size Method ── -->
+        <div class="note-block section-anchor" id="s18">
+          <h2 class="block-title"><span class="block-icon">&#128290;</span>18. The Block Size Method — Step by Step</h2>
+          <p>This is the subnetting method to master. Practice until it's automatic.</p>
+
+          <!-- Worked Example 1 -->
+          <div class="solver" style="margin-top:18px;">
+            <div class="solver-header">&#128270; Example 1: &nbsp; 192.168.1.70/26</div>
+            <div class="solver-step">
+              <div class="solver-step-num">1</div>
+              <div class="solver-step-body">
+                <h4>Find the subnet mask from CIDR</h4>
+                <p>/26 → <span class="code">255.255.255.192</span></p>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">2</div>
+              <div class="solver-step-body">
+                <h4>Find the "interesting octet"</h4>
+                <p>The last non-255 octet of the mask: <span class="code">192</span></p>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">3</div>
+              <div class="solver-step-body">
+                <h4>Calculate Block Size</h4>
+                <p>256 &minus; 192 = <span class="code">64</span></p>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">4</div>
+              <div class="solver-step-body">
+                <h4>List the subnet blocks</h4>
+                <div class="blocks-visual" style="margin-top:10px;">
+                  <div class="block-item"><div class="bl-range">0 – 63</div><div class="bl-label">Block 1</div></div>
+                  <div class="block-item highlight"><div class="bl-range">64 – 127</div><div class="bl-label">&#9989; Our subnet</div></div>
+                  <div class="block-item"><div class="bl-range">128 – 191</div><div class="bl-label">Block 3</div></div>
+                  <div class="block-item"><div class="bl-range">192 – 255</div><div class="bl-label">Block 4</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">5</div>
+              <div class="solver-step-body">
+                <h4>Locate the IP</h4>
+                <p>Our IP's last octet = <span class="code">70</span> → falls in block <span class="code">64 – 127</span></p>
+              </div>
+            </div>
+            <div class="solver-result">
+              <table>
+                <tr><td>IP Address:</td><td>192.168.1.70/26</td></tr>
+                <tr><td>Subnet Mask:</td><td>255.255.255.192</td></tr>
+                <tr><td>Network:</td><td>192.168.1.64</td></tr>
+                <tr><td>First Usable:</td><td>192.168.1.65</td></tr>
+                <tr><td>Last Usable:</td><td>192.168.1.126</td></tr>
+                <tr><td>Broadcast:</td><td>192.168.1.127</td></tr>
+                <tr><td>Usable Hosts:</td><td>62 &nbsp;(2⁶ &minus; 2)</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── S19: Worked Example 2 ── -->
+        <div class="note-block section-anchor" id="s19">
+          <h2 class="block-title"><span class="block-icon">&#128290;</span>19. Block Size Method — Example 2</h2>
+
+          <div class="solver">
+            <div class="solver-header">&#128270; Example 2: &nbsp; 10.10.20.130/27</div>
+            <div class="solver-step">
+              <div class="solver-step-num">1</div>
+              <div class="solver-step-body">
+                <h4>Subnet mask</h4>
+                <p>/27 → <span class="code">255.255.255.224</span></p>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">2</div>
+              <div class="solver-step-body">
+                <h4>Block Size</h4>
+                <p>256 &minus; 224 = <span class="code">32</span></p>
+              </div>
+            </div>
+            <div class="solver-step">
+              <div class="solver-step-num">3</div>
+              <div class="solver-step-body">
+                <h4>Subnet blocks (increments of 32)</h4>
+                <div class="blocks-visual" style="margin-top:10px; flex-wrap:wrap;">
+                  <div class="block-item"><div class="bl-range">0–31</div></div>
+                  <div class="block-item"><div class="bl-range">32–63</div></div>
+                  <div class="block-item"><div class="bl-range">64–95</div></div>
+                  <div class="block-item"><div class="bl-range">96–127</div></div>
+                  <div class="block-item highlight"><div class="bl-range">128–159</div><div class="bl-label">&#9989; .130 here</div></div>
+                  <div class="block-item"><div class="bl-range">160–191</div></div>
+                  <div class="block-item"><div class="bl-range">192–223</div></div>
+                  <div class="block-item"><div class="bl-range">224–255</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="solver-result">
+              <table>
+                <tr><td>IP Address:</td><td>10.10.20.130/27</td></tr>
+                <tr><td>Subnet Mask:</td><td>255.255.255.224</td></tr>
+                <tr><td>Network:</td><td>10.10.20.128</td></tr>
+                <tr><td>First Usable:</td><td>10.10.20.129</td></tr>
+                <tr><td>Last Usable:</td><td>10.10.20.158</td></tr>
+                <tr><td>Broadcast:</td><td>10.10.20.159</td></tr>
+                <tr><td>Usable Hosts:</td><td>30 &nbsp;(2⁵ &minus; 2)</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── S20: Cloud VPC Connection ── -->
+        <div class="note-block section-anchor" id="s20">
+          <h2 class="block-title"><span class="block-icon">&#9729;</span>20. Cloud Networking Connection</h2>
+          <p>Subnetting is the <strong>foundation of cloud networking</strong>. Every AWS VPC, Azure VNet, and GCP VPC uses subnetting directly.</p>
+          <div class="net-diagram">AWS VPC:  10.0.0.0/16
+              │
+    ┌─────────┼─────────┐
+    │         │         │
+Public    Private      DB
+10.0.1.0  10.0.2.0  10.0.3.0
+  /24        /24       /24
+
+Traffic between subnets → controlled by Route Tables + Security Groups</div>
+          <div class="callout callout-exam" style="margin-top:14px;">
+            <span class="callout-icon">&#127891;</span>
+            <div>
+              <strong>The career path:</strong><br/>
+              Subnetting → Routing → AWS VPC → Cloud Networking → Cloud Security<br/><br/>
+              Every skill you learn now directly maps to real cloud engineering work.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PRACTICE PROBLEMS ── -->
+        <div class="note-block section-anchor" id="practice" style="border-color:rgba(74,222,128,0.4);">
+          <h2 class="block-title" style="color:#16a34a;"><span class="block-icon">&#128299;</span>Day 2 Practice Problems</h2>
+          <p style="margin-bottom:20px;">Solve these <strong>without a calculator</strong> first. Verify with Windows Calc (Programmer mode) after.</p>
+
+          <div class="practice-q">
+            <div class="practice-q-header">
+              <span class="practice-q-num">Question 1</span>
+              <span class="practice-q-ip">192.168.1.50/24</span>
+            </div>
+            <div class="answer-grid">
+              <div class="answer-row"><span class="ar-label">Subnet Mask</span><span class="ar-val">255.255.255.0</span></div>
+              <div class="answer-row"><span class="ar-label">Network</span><span class="ar-val">192.168.1.0</span></div>
+              <div class="answer-row"><span class="ar-label">First Usable</span><span class="ar-val">192.168.1.1</span></div>
+              <div class="answer-row"><span class="ar-label">Last Usable</span><span class="ar-val">192.168.1.254</span></div>
+              <div class="answer-row"><span class="ar-label">Broadcast</span><span class="ar-val">192.168.1.255</span></div>
+              <div class="answer-row"><span class="ar-label">Usable Hosts</span><span class="ar-val">254</span></div>
+            </div>
+          </div>
+
+          <div class="practice-q">
+            <div class="practice-q-header">
+              <span class="practice-q-num">Question 2</span>
+              <span class="practice-q-ip">192.168.1.100/26</span>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Block size: 256&minus;192=64 → Blocks: 0–63, <strong>64–127</strong>, 128–191, 192–255. 100 is in 64–127.</p>
+            <div class="answer-grid">
+              <div class="answer-row"><span class="ar-label">Subnet Mask</span><span class="ar-val">255.255.255.192</span></div>
+              <div class="answer-row"><span class="ar-label">Network</span><span class="ar-val">192.168.1.64</span></div>
+              <div class="answer-row"><span class="ar-label">First Usable</span><span class="ar-val">192.168.1.65</span></div>
+              <div class="answer-row"><span class="ar-label">Last Usable</span><span class="ar-val">192.168.1.126</span></div>
+              <div class="answer-row"><span class="ar-label">Broadcast</span><span class="ar-val">192.168.1.127</span></div>
+              <div class="answer-row"><span class="ar-label">Usable Hosts</span><span class="ar-val">62</span></div>
+            </div>
+          </div>
+
+          <div class="practice-q">
+            <div class="practice-q-header">
+              <span class="practice-q-num">Question 3</span>
+              <span class="practice-q-ip">192.168.1.200/27</span>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Block size: 256&minus;224=32 → …, 192–223 ✓ (200 is here), 224–255</p>
+            <div class="answer-grid">
+              <div class="answer-row"><span class="ar-label">Subnet Mask</span><span class="ar-val">255.255.255.224</span></div>
+              <div class="answer-row"><span class="ar-label">Network</span><span class="ar-val">192.168.1.192</span></div>
+              <div class="answer-row"><span class="ar-label">First Usable</span><span class="ar-val">192.168.1.193</span></div>
+              <div class="answer-row"><span class="ar-label">Last Usable</span><span class="ar-val">192.168.1.222</span></div>
+              <div class="answer-row"><span class="ar-label">Broadcast</span><span class="ar-val">192.168.1.223</span></div>
+              <div class="answer-row"><span class="ar-label">Usable Hosts</span><span class="ar-val">30</span></div>
+            </div>
+          </div>
+
+          <div class="practice-q">
+            <div class="practice-q-header">
+              <span class="practice-q-num">Question 4</span>
+              <span class="practice-q-ip">10.10.10.50/28</span>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Block size: 256&minus;240=16 → Blocks: 0–15, 16–31, 32–47, <strong>48–63</strong> ✓ (50 is here)</p>
+            <div class="answer-grid">
+              <div class="answer-row"><span class="ar-label">Subnet Mask</span><span class="ar-val">255.255.255.240</span></div>
+              <div class="answer-row"><span class="ar-label">Network</span><span class="ar-val">10.10.10.48</span></div>
+              <div class="answer-row"><span class="ar-label">First Usable</span><span class="ar-val">10.10.10.49</span></div>
+              <div class="answer-row"><span class="ar-label">Last Usable</span><span class="ar-val">10.10.10.62</span></div>
+              <div class="answer-row"><span class="ar-label">Broadcast</span><span class="ar-val">10.10.10.63</span></div>
+              <div class="answer-row"><span class="ar-label">Usable Hosts</span><span class="ar-val">14</span></div>
+            </div>
+          </div>
+
+          <div class="practice-q" style="border-color:rgba(250,204,21,0.5);">
+            <div class="practice-q-header">
+              <span class="practice-q-num" style="background:linear-gradient(135deg,#b45309,#f59e0b);">Challenge Q5</span>
+              <span class="practice-q-ip">172.16.45.130/25</span>
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">Block size: 256&minus;128=128 → Blocks: 0–127, <strong>128–255</strong> ✓ (130 is here)</p>
+            <div class="answer-grid">
+              <div class="answer-row"><span class="ar-label">Subnet Mask</span><span class="ar-val">255.255.255.128</span></div>
+              <div class="answer-row"><span class="ar-label">Network</span><span class="ar-val">172.16.45.128</span></div>
+              <div class="answer-row"><span class="ar-label">First Usable</span><span class="ar-val">172.16.45.129</span></div>
+              <div class="answer-row"><span class="ar-label">Last Usable</span><span class="ar-val">172.16.45.254</span></div>
+              <div class="answer-row"><span class="ar-label">Broadcast</span><span class="ar-val">172.16.45.255</span></div>
+              <div class="answer-row"><span class="ar-label">Usable Hosts</span><span class="ar-val">126</span></div>
+            </div>
+          </div>
+
+          <!-- Final Challenge -->
+          <div class="callout callout-exam" style="margin-top:8px;">
+            <span class="callout-icon">&#129504;</span>
+            <div>
+              <strong>Final Challenge — solve without looking:</strong><br/>
+              IP: <code style="font-family:'Fira Code',monospace;">192.168.10.145/27</code><br/><br/>
+              Block size: 256&minus;224=32 → blocks: 0–31, 32–63, 64–95, 96–127, <strong>128–159</strong> ✓ (145 is here)<br/><br/>
+              Network: 192.168.10.128 | First: .129 | Last: .158 | Broadcast: .159 | Hosts: 30
+            </div>
+          </div>
+        </div>
+
+        <!-- ── INTERVIEW QUESTIONS ── -->
+        <div class="note-block section-anchor" id="iq" style="border-color:rgba(250,204,21,0.5);">
+          <h2 class="block-title" style="color:#b45309;"><span class="block-icon">&#127908;</span>Day 2 Interview Questions</h2>
+          <p style="margin-bottom:18px;">Answer these <strong>in your own words</strong>, without looking at notes.</p>
+          <ul class="iq-list">
+            <li>What is IPv4?</li>
+            <li>How many bits are in an IPv4 address?</li>
+            <li>What is a subnet mask?</li>
+            <li>What does /24 mean?</li>
+            <li>What is the subnet mask for /26?</li>
+            <li>How many usable hosts are in a /24?</li>
+            <li>How many usable hosts are in a /27?</li>
+            <li>What is a network address?</li>
+            <li>What is a broadcast address?</li>
+            <li>What is subnetting?</li>
+            <li>Why do companies use subnetting?</li>
+            <li>What is CIDR?</li>
+            <li>What is the difference between an IP address and a subnet mask?</li>
+            <li>Find the network address for 192.168.10.75/26.</li>
+            <li>A company has 192.168.1.0/24 and wants four equal-size subnets. What prefix length would you use?</li>
+          </ul>
+          <div class="callout callout-tip" style="margin-top:16px;">
+            <span class="callout-icon">&#128161;</span>
+            <div><strong>Answer for Q15:</strong> /26 (because /24 split into 4 equal parts = 4 × /26 subnets, each with 64 addresses, 62 usable).</div>
+          </div>
+        </div>
+
+        <!-- ── KEY POINTS ── -->
+        <div class="note-block section-anchor" id="keypoints">
+          <h2 class="block-title"><span class="block-icon">&#11088;</span>Day 2 Key Points — Memorise These</h2>
+          <div class="concept-grid" style="margin-top:14px;">
+            <div class="concept-card"><div class="cc-icon">&#127758;</div><div class="cc-title">IPv4 = 32 bits</div><div class="cc-desc">4 octets × 8 bits = 32 bits</div></div>
+            <div class="concept-card"><div class="cc-icon">&#9889;</div><div class="cc-title">1 byte = 8 bits</div><div class="cc-desc">Each octet is 1 byte, range 0–255</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128290;</div><div class="cc-title">/24 = 255.255.255.0</div><div class="cc-desc">254 usable hosts</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128290;</div><div class="cc-title">/26 = 255.255.255.192</div><div class="cc-desc">62 usable hosts, block 64</div></div>
+            <div class="concept-card"><div class="cc-icon">&#128290;</div><div class="cc-title">/27 = 255.255.255.224</div><div class="cc-desc">30 usable hosts, block 32</div></div>
+            <div class="concept-card"><div class="cc-icon">&#129518;</div><div class="cc-title">Formula</div><div class="cc-desc">Usable = 2^(host bits) − 2</div></div>
+          </div>
+
+          <div style="margin-top:24px; text-align:center;">
+            <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:14px;"><strong>The Subnetting Workflow:</strong></p>
+            <div class="kp-flow">
+              <div class="kp-item">IP + CIDR</div>
+              <div class="kp-arrow">&#8595;</div>
+              <div class="kp-item">Subnet Mask</div>
+              <div class="kp-arrow">&#8595;</div>
+              <div class="kp-item">Block Size (256 &minus; mask)</div>
+              <div class="kp-arrow">&#8595;</div>
+              <div class="kp-item">Network Address</div>
+              <div class="kp-arrow">&#8595;</div>
+              <div class="kp-item">Broadcast Address</div>
+              <div class="kp-arrow">&#8595;</div>
+              <div class="kp-item">Usable Host Range</div>
+            </div>
+          </div>
+
+          <div class="callout callout-exam" style="margin-top:20px;">
+            <span class="callout-icon">&#127891;</span>
+            <div><strong>What's Next (Day 3):</strong> You'll build on subnetting with routing concepts — how routers decide where to send packets, static vs dynamic routing, and how this connects to cloud route tables.</div>
+          </div>
+        </div>
+
+              <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day2">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 2 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">IPv4 & Subnetting</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 7 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain IPv4 32-bit structure and dotted decimal notation</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Identify IPv4 Address Classes (A, B, C) and RFC 1918 Private IP ranges</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Differentiate Network ID and Host ID using a Subnet Mask</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Calculate usable IP addresses per subnet using 2^H - 2</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Convert between CIDR notation (/24, /26, /28) and subnet masks</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Determine the Network Address and Broadcast Address for any given IP/CIDR</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain why subnetting prevents IP exhaustion and controls broadcast traffic</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 2 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+      </main>
+
+      <!-- ── SIDEBAR ── -->
+      <aside class="note-sidebar">
+
+        <!-- Progress -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 2 Progress</div>
+          <div>
+            <div class="progress-item"><span>Topics Covered</span><span style="color:var(--primary);font-weight:600;">20 topics</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Practice Problems</span><span style="color:#16a34a;font-weight:600;">5 + Challenge</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Phase 1 Overall</span><span style="color:var(--primary);font-weight:600;">~20%</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="20" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Subnet Quick Ref -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; Subnet Cheat Sheet</div>
+          <ul class="key-terms-list">
+            <li><strong>/24</strong> → 255.255.255.0 → 254 hosts</li>
+            <li><strong>/25</strong> → 255.255.255.128 → 126 hosts</li>
+            <li><strong>/26</strong> → 255.255.255.192 → 62 hosts</li>
+            <li><strong>/27</strong> → 255.255.255.224 → 30 hosts</li>
+            <li><strong>/28</strong> → 255.255.255.240 → 14 hosts</li>
+            <li><strong>/29</strong> → 255.255.255.248 → 6 hosts</li>
+            <li><strong>/30</strong> → 255.255.255.252 → 2 hosts</li>
+          </ul>
+        </div>
+
+        <!-- Block Sizes -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128290; Block Sizes</div>
+          <ul class="key-terms-list">
+            <li><strong>256&minus;128 = 128</strong> (/25)</li>
+            <li><strong>256&minus;192 = 64</strong> (/26)</li>
+            <li><strong>256&minus;224 = 32</strong> (/27)</li>
+            <li><strong>256&minus;240 = 16</strong> (/28)</li>
+            <li><strong>256&minus;248 = 8</strong> (/29)</li>
+            <li><strong>256&minus;252 = 4</strong> (/30)</li>
+          </ul>
+        </div>
+
+        <!-- Formula -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#129518; Formula</div>
+          <div style="text-align:center;padding:16px;background:var(--lightest);border-radius:var(--radius-md);">
+            <div style="font-family:'Fira Code',monospace;font-size:1rem;font-weight:700;color:var(--primary);">2<sup>n</sup> &minus; 2</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:6px;">n = host bits<br/>(32 &minus; prefix length)</div>
+          </div>
+        </div>
+
+        <!-- Navigate -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="day1.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8592; Day 1: Networking Fundamentals
+            </a>
+            <a href="day3.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8594; Day 3: ARP, ICMP, TCP, UDP
+            </a>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon">&#9729;</span>
+          <span>The Way of <strong>Dreams</strong></span>
+        </div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

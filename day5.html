@@ -1,0 +1,428 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 5 - Ethernet Switching &amp; VLAN Fundamentals | The Way of Dreams</title>
+  <meta name="description" content="Day 5 notes: Ethernet, MAC addresses, switch learning, MAC table, VLANs, access ports, trunk ports, 802.1Q, inter-VLAN routing, and Cisco commands." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .net-diagram { background:var(--dark); border-radius:var(--radius-md); padding:22px 24px; margin:14px 0; font-family:'Fira Code','Courier New',monospace; font-size:0.83rem; color:var(--soft); line-height:1.9; border:1px solid rgba(112,145,230,0.2); overflow-x:auto; white-space:pre; }
+    .toc-card { background:linear-gradient(135deg,rgba(61,82,160,0.07),rgba(112,145,230,0.12)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-lg); padding:28px 32px; margin-bottom:28px; }
+    .toc-card h3 { font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+    .toc-list { list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; padding:0; }
+    .toc-list li a { color:var(--text-muted); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:7px; transition:var(--transition); padding:3px 0; }
+    .toc-list li a:hover { color:var(--primary); padding-left:4px; }
+    .toc-list li a .toc-num { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-size:0.68rem; font-weight:700; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    @media(max-width:600px){ .toc-list{grid-template-columns:1fr;} }
+    .section-anchor { scroll-margin-top:90px; }
+
+    /* MAC TABLE */
+    .mac-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.86rem; border-radius:var(--radius-md); overflow:hidden; }
+    .mac-table thead tr { background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+    .mac-table thead th { padding:12px 16px; color:white; font-family:'Outfit',sans-serif; font-weight:700; text-align:left; }
+    .mac-table tbody tr { border-bottom:1px solid rgba(173,187,218,0.3); transition:background 0.18s; }
+    .mac-table tbody tr:hover { background:rgba(112,145,230,0.05); }
+    .mac-table tbody td { padding:11px 16px; color:var(--text-muted); }
+    .mac-table tbody td:first-child { font-family:'Fira Code',monospace; font-weight:700; color:var(--primary); }
+    .mac-table tbody td:last-child { font-family:'Fira Code',monospace; color:#4ade80; }
+
+    /* COMPARE TABLE */
+    .compare-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.86rem; border-radius:var(--radius-md); overflow:hidden; }
+    .compare-table thead tr { background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+    .compare-table thead th { padding:12px 16px; color:white; font-family:'Outfit',sans-serif; font-weight:700; text-align:left; }
+    .compare-table tbody tr { border-bottom:1px solid rgba(173,187,218,0.3); transition:background 0.18s; }
+    .compare-table tbody tr:hover { background:rgba(112,145,230,0.05); }
+    .compare-table tbody td { padding:11px 16px; color:var(--text-muted); font-size:0.84rem; }
+    .compare-table tbody td:first-child { font-weight:600; color:var(--primary); }
+
+    /* CHAIN FLOW */
+    .chain { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .chain-item { padding:11px 32px; border-radius:var(--radius-md); font-family:'Outfit',sans-serif; font-weight:700; font-size:0.85rem; text-align:center; min-width:220px; background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.15)); border:1.5px solid rgba(112,145,230,0.3); color:var(--primary); }
+    .chain-item.green { background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(74,222,128,0.14)); border-color:rgba(74,222,128,0.35); color:#16a34a; }
+    .chain-item.red { background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.14)); border-color:rgba(239,68,68,0.35); color:#ef4444; }
+    .chain-arrow { font-size:1.2rem; color:var(--secondary); line-height:1; margin:2px 0; }
+    .chain-label { font-size:0.72rem; color:var(--steel); font-weight:600; margin-bottom:2px; font-family:'Outfit',sans-serif; }
+
+    /* CMD BLOCK */
+    .cmd-group { display:flex; flex-direction:column; gap:10px; margin:14px 0; }
+    .cmd-item { background:var(--dark); border-radius:var(--radius-md); padding:14px 20px; border:1px solid rgba(112,145,230,0.2); }
+    .cmd-label { font-size:0.74rem; color:var(--steel); font-weight:600; margin-bottom:6px; font-family:'Outfit',sans-serif; text-transform:uppercase; letter-spacing:0.05em; }
+    .cmd-code { font-family:'Fira Code',monospace; font-size:0.88rem; color:#4ade80; }
+    .cmd-code.multi { white-space:pre; line-height:1.8; }
+
+    /* SWITCH DIAGRAM */
+    .switch-diagram { display:flex; flex-direction:column; align-items:center; gap:0; margin:16px 0; }
+    .sw-box { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-family:'Outfit',sans-serif; font-weight:800; font-size:0.95rem; padding:14px 44px; border-radius:var(--radius-md); text-align:center; }
+    .sw-ports { display:flex; gap:24px; margin-top:0; }
+    .sw-port { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .sw-port-line { width:2px; height:32px; background:linear-gradient(to bottom,var(--secondary),rgba(112,145,230,0.3)); }
+    .sw-port-label { font-family:'Fira Code',monospace; font-size:0.75rem; color:var(--steel); font-weight:600; }
+    .sw-device { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.15)); border:1.5px solid rgba(112,145,230,0.3); border-radius:var(--radius-sm); padding:8px 18px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.8rem; color:var(--primary); text-align:center; }
+    .sw-device.server { background:linear-gradient(135deg,rgba(22,163,74,0.08),rgba(74,222,128,0.14)); border-color:rgba(74,222,128,0.35); color:#16a34a; }
+
+    /* VLAN DIAGRAM */
+    .vlan-diagram { background:var(--lightest); border-radius:var(--radius-lg); border:1.5px solid rgba(173,187,218,0.35); padding:24px; margin:14px 0; }
+    .vlan-diagram-inner { display:flex; justify-content:center; gap:32px; margin-top:16px; flex-wrap:wrap; }
+    .vlan-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .vlan-badge { padding:6px 18px; border-radius:99px; font-family:'Outfit',sans-serif; font-weight:800; font-size:0.78rem; }
+    .vlan-badge.v10 { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; }
+    .vlan-badge.v20 { background:linear-gradient(135deg,#16a34a,#4ade80); color:white; }
+    .vlan-badge.v30 { background:linear-gradient(135deg,#7c3aed,#a855f7); color:white; }
+    .vlan-badge.v40 { background:linear-gradient(135deg,#d97706,#f59e0b); color:white; }
+    .vlan-line { width:2px; height:22px; background:rgba(112,145,230,0.35); }
+    .vlan-device { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-sm); padding:8px 16px; font-size:0.8rem; color:var(--text-muted); font-family:'Outfit',sans-serif; font-weight:600; text-align:center; }
+    .vlan-switch-bar { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:white; font-family:'Outfit',sans-serif; font-weight:800; font-size:0.88rem; padding:10px 32px; border-radius:var(--radius-md); text-align:center; margin-bottom:8px; }
+
+    /* PAIR CARDS */
+    .pair-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:16px 0; }
+    .pair-card { border-radius:var(--radius-lg); padding:22px; }
+    .pair-card.blue { background:linear-gradient(135deg,rgba(61,82,160,0.08),rgba(112,145,230,0.14)); border:2px solid rgba(112,145,230,0.35); }
+    .pair-card.green-c { background:linear-gradient(135deg,rgba(22,163,74,0.06),rgba(74,222,128,0.12)); border:2px solid rgba(74,222,128,0.3); }
+    .pair-card h3 { font-family:'Outfit',sans-serif; font-weight:800; font-size:1rem; margin-bottom:12px; }
+    .pair-card.blue h3 { color:var(--primary); }
+    .pair-card.green-c h3 { color:#16a34a; }
+    .pair-card p, .pair-card li { font-size:0.84rem; color:var(--text-muted); line-height:1.6; }
+    .pair-card ul { padding-left:18px; margin-top:8px; }
+    @media(max-width:640px){ .pair-grid{grid-template-columns:1fr;} }
+
+    /* FORWARDING FLOW TREE */
+    .fwd-tree { background:var(--dark); border-radius:var(--radius-lg); padding:24px; border:1px solid rgba(112,145,230,0.2); margin:14px 0; font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--soft); line-height:2; white-space:pre; overflow-x:auto; }
+
+    /* IQ */
+    .iq-section h4 { font-family:'Outfit',sans-serif; font-weight:700; color:var(--primary); font-size:0.9rem; margin:18px 0 8px; }
+    .iq-list { list-style:none; display:flex; flex-direction:column; gap:8px; counter-reset:iq-counter; padding:0; }
+    .iq-list li { counter-increment:iq-counter; background:var(--lightest); border-left:3px solid var(--secondary); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 16px 10px 46px; font-size:0.88rem; color:var(--text-muted); position:relative; }
+    .iq-list li::before { content:"Q" counter(iq-counter); position:absolute; left:10px; font-family:'Outfit',sans-serif; font-weight:700; font-size:0.72rem; color:var(--secondary); top:50%; transform:translateY(-50%); }
+
+    /* LAB */
+    .lab-block { background:white; border:1.5px solid rgba(173,187,218,0.4); border-radius:var(--radius-lg); padding:24px; margin-bottom:16px; }
+    .lab-block-title { font-family:'Outfit',sans-serif; font-weight:700; font-size:0.95rem; color:var(--primary); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+
+    /* QUICK PAIRS */
+    .quick-pairs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+    .qp { background:var(--lightest); border-radius:var(--radius-md); padding:16px 18px; border-left:3px solid var(--secondary); }
+    .qp-top { font-family:'Fira Code',monospace; font-size:0.85rem; color:var(--primary); font-weight:700; }
+    .qp-arrow { color:var(--secondary); font-size:0.9rem; margin:3px 0; }
+    .qp-bot { font-family:'Outfit',sans-serif; font-size:0.82rem; color:var(--text-muted); font-weight:600; }
+    @media(max-width:540px){ .quick-pairs{grid-template-columns:1fr;} }
+
+    /* SCENARIO */
+    .scenario-card { background:white; border-radius:var(--radius-lg); border:1.5px solid rgba(173,187,218,0.4); padding:22px 24px; margin:12px 0; }
+    .scenario-card .sc-num { font-family:'Outfit',sans-serif; font-weight:800; font-size:0.78rem; color:var(--secondary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+    .scenario-card .sc-q { font-family:'Outfit',sans-serif; font-weight:700; color:var(--text-main); font-size:0.92rem; margin-bottom:8px; }
+    .scenario-card .sc-hint { font-size:0.84rem; color:var(--text-muted); background:rgba(112,145,230,0.07); border-radius:var(--radius-sm); padding:8px 14px; border-left:3px solid var(--secondary); }
+
+    /* CHEAT */
+    .cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:14px 0; }
+    .cheat-col { background:var(--dark); border-radius:var(--radius-lg); padding:22px 24px; border:1px solid rgba(112,145,230,0.2); }
+    .cheat-col h4 { font-family:'Outfit',sans-serif; font-weight:800; color:var(--secondary); font-size:0.95rem; margin-bottom:14px; }
+    .cheat-col ul { list-style:none; display:flex; flex-direction:column; gap:7px; padding:0; }
+    .cheat-col li { font-family:'Fira Code',monospace; font-size:0.82rem; color:var(--soft); padding-left:16px; position:relative; }
+    .cheat-col li::before { content:'&rsaquo;'; position:absolute; left:0; color:var(--secondary); font-weight:700; }
+    @media(max-width:640px){ .cheat-grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body class="day-page-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">&#9729;</span>
+        <span class="logo-text">The Way of <strong>Dreams</strong></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#journey">Journey</a></li>
+        <li><a href="index.html#notes-grid" class="active">Notes</a></li>
+        <li><a href="index.html#about">About</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- BACK BAR -->
+  <div class="back-bar">
+    <div class="container">
+      <a href="index.html#notes-grid" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Notes
+      </a>
+    </div>
+  </div>
+
+  <!-- DAY HERO -->
+  <div class="day-hero">
+    <div class="container day-hero-inner">
+      <div class="day-number">&#128218; Day 5 &nbsp;&middot;&nbsp; Phase 1: Networking Fundamentals</div>
+      <h1 class="day-title">Ethernet Switching &amp;<br/>VLAN Fundamentals</h1>
+      <div class="day-meta">
+        <span>&#128197; Day 5 of the journey</span>
+        <span>&#9203; ~80 min read</span>
+        <span>&#127891; Theory + 3 Labs</span>
+        <span>&#128100; 14 Interview Questions</span>
+      </div>
+      <div class="day-tags">
+        <span class="day-tag">Ethernet</span>
+        <span class="day-tag">MAC Address</span>
+        <span class="day-tag">Switch</span>
+        <span class="day-tag">MAC Table</span>
+        <span class="day-tag">CAM Table</span>
+        <span class="day-tag">VLAN</span>
+        <span class="day-tag">Access Port</span>
+        <span class="day-tag">Trunk Port</span>
+        <span class="day-tag">802.1Q</span>
+        <span class="day-tag">Inter-VLAN Routing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTE LAYOUT -->
+  <div class="container">
+    <div class="note-layout">
+
+      <main class="note-main">
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc-card">
+          <h3>&#128204; Table of Contents &mdash; Day 5</h3>
+          <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">1</span>Ethernet</a></li>
+            <li><a href="#s2"><span class="toc-num">2</span>MAC Address</a></li>
+            <li><a href="#s3"><span class="toc-num">3</span>MAC vs IP</a></li>
+            <li><a href="#s4"><span class="toc-num">4</span>What is a Switch?</a></li>
+            <li><a href="#s5"><span class="toc-num">5</span>MAC Address Table</a></li>
+            <li><a href="#s6"><span class="toc-num">6</span>How Switch Learns</a></li>
+            <li><a href="#s7"><span class="toc-num">7</span>How Switch Forwards</a></li>
+            <li><a href="#s8"><span class="toc-num">8</span>Unknown Unicast &amp; Flood</a></li>
+            <li><a href="#s9"><span class="toc-num">9</span>Broadcast / Unicast / Multicast</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span>Collision &amp; Broadcast Domain</a></li>
+            <li><a href="#s11"><span class="toc-num">11</span>What is a VLAN?</a></li>
+            <li><a href="#s12"><span class="toc-num">12</span>Why Use VLANs?</a></li>
+            <li><a href="#s13"><span class="toc-num">13</span>VLAN + Subnet</a></li>
+            <li><a href="#s14"><span class="toc-num">14</span>Access Port</a></li>
+            <li><a href="#s15"><span class="toc-num">15</span>Trunk Port &amp; 802.1Q</a></li>
+            <li><a href="#s16"><span class="toc-num">16</span>Inter-VLAN Routing</a></li>
+            <li><a href="#s17"><span class="toc-num">17</span>Switching Process Flow</a></li>
+            <li><a href="#s18"><span class="toc-num">18</span>Cisco Commands</a></li>
+            <li><a href="#labs"><span class="toc-num">&#128299;</span>3 Packet Tracer Labs</a></li>
+            <li><a href="#iq"><span class="toc-num">&#127908;</span>14 Interview Questions</a></li>
+            <li><a href="#scenario"><span class="toc-num">&#128293;</span>Real Scenario</a></li>
+            <li><a href="#summary"><span class="toc-num">&#11088;</span>Must Know</a></li>
+          </ul>
+        </div>
+
+        <!-- S1 -->
+        <div class="note-block section-anchor" id="s1">
+          <h2 class="block-title"><span class="block-icon">&#128279;</span>1. Ethernet</h2>
+          <p><strong>Ethernet</strong> is the dominant technology used for communication inside a Local Area Network (LAN). Devices communicate using <strong>Ethernet frames</strong>.</p>
+          <div class="net-diagram">PC -------- Switch -------- Server
+
+A simplified Ethernet frame contains:
+  Destination MAC
+  Source MAC
+  Data</div>
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div>Ethernet operates at <strong>Layer 2 (Data Link)</strong> of the OSI model. It defines how devices format and transmit data on the local network segment.</div>
+          </div>
+        </div>
+
+        <!-- S2 -->
+        <div class="note-block section-anchor" id="s2">
+          <h2 class="block-title"><span class="block-icon">&#128279;</span>2. MAC Address</h2>
+          <p><strong>MAC = Media Access Control.</strong> A MAC address is a Layer 2 address associated with a network interface.</p>
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="cc-icon">&#128279;</div>
+              <div class="cc-title">Format</div>
+              <div class="cc-desc"><code>00:1A:2B:3C:4D:5E</code><br/><br/>&bull; 48 bits total<br/>&bull; 6 bytes<br/>&bull; Written in hexadecimal<br/>&bull; 6 groups of 2 hex digits</div>
+            </div>
+            <div class="concept-card">
+              <div class="cc-icon">&#128218;</div>
+              <div class="cc-title">Purpose</div>
+              <div class="cc-desc">Identifies a <strong>network interface</strong> at Layer 2.<br/><br/>Used for <strong>local frame delivery</strong> on the Ethernet segment. Not routable across subnets.</div>
+            </div>
+          </div>
+                  <!-- INTERACTIVE COMPLETION CHECKLIST -->
+        <div class="checklist-card section-anchor" id="checklist" data-checklist-id="day5">
+          <div class="checklist-header">
+            <div class="checklist-title-group">
+              <div class="checklist-icon">ðŸŽ¯</div>
+              <div>
+                <h3 class="checklist-title">Day 5 &mdash; Mastery Checklist</h3>
+                <span class="checklist-badge">Ethernet Switching & VLANs</span>
+              </div>
+            </div>
+            <div class="checklist-meta">
+              <span class="checklist-progress-text">0 / 8 completed (0%)</span>
+              <button class="checklist-reset-btn" title="Reset this checklist">Reset</button>
+            </div>
+          </div>
+          <div class="checklist-progress-bar">
+            <div class="checklist-progress-fill"></div>
+          </div>
+          <ul class="checklist-items">
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain what Ethernet is and what an Ethernet frame contains</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Describe MAC address structure (48-bit hex, OUI + NIC) and purpose</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain how a switch dynamically learns MAC addresses in its MAC table</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Describe MAC table aging, unknown unicast flooding, and broadcast handling</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Define what a VLAN is and explain why networks use logical segmentation</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Contrast Access Port (single VLAN, untagged) vs Trunk Port (multiple VLANs, tagged)</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Explain 802.1Q frame tagging and Native VLAN concepts</span>
+          </li>
+          <li class="checklist-item">
+            <div class="chk-box">
+              <svg class="chk-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="chk-label">Execute switch verification commands: show mac address-table and show vlan brief</span>
+          </li>
+          </ul>
+          <div class="checklist-complete-banner">
+            <h4>ðŸŽ‰ Day 5 Completed! Outstanding Work!</h4>
+            <p>You have mastered all core competencies for today. Keep up this consistency on your cloud network journey!</p>
+          </div>
+        </div>
+
+          <div class="callout callout-note" style="margin-top:12px;">
+            <span class="callout-icon">&#128204;</span>
+            <div><strong>What is Next:</strong> STP (Spanning Tree Protocol) &rarr; EtherChannel &rarr; Static &amp; Dynamic Routing &rarr; OSPF &rarr; ACL &rarr; NAT &rarr; VPN &rarr; Cloud Networking. You are building the foundation for all of it.</div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- SIDEBAR -->
+      <aside class="note-sidebar">
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128200; Day 5 Progress</div>
+          <div>
+            <div class="progress-item"><span>Topics</span><span style="color:var(--primary);font-weight:600;">18 sections</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Labs</span><span style="color:#16a34a;font-weight:600;">3 labs &#128299;</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="100" style="width:0%;background:linear-gradient(90deg,#16a34a,#4ade80)"></div></div>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="progress-item"><span>Phase 1 Overall</span><span style="color:var(--primary);font-weight:600;">~50%</span></div>
+            <div class="progress-bar"><div class="progress-fill" data-width="50" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#9889; Quick Reference</div>
+          <ul class="key-terms-list">
+            <li><strong>MAC</strong> Layer 2 address</li>
+            <li><strong>CAM Table</strong> MAC address table</li>
+            <li><strong>Source MAC</strong> Learn</li>
+            <li><strong>Dest MAC</strong> Forward</li>
+            <li><strong>Unknown</strong> Flood</li>
+            <li><strong>Broadcast</strong> FF:FF:FF:FF:FF:FF</li>
+            <li><strong>VLAN</strong> L2 segment</li>
+            <li><strong>Access</strong> One VLAN</li>
+            <li><strong>Trunk</strong> Multi-VLAN</li>
+            <li><strong>802.1Q</strong> VLAN tag standard</li>
+            <li><strong>Inter-VLAN</strong> Needs L3</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128268; Switch Rules</div>
+          <div style="text-align:center;padding:12px;background:var(--lightest);border-radius:var(--radius-md);">
+            <div style="font-family:'Fira Code',monospace;font-size:0.82rem;color:var(--primary);font-weight:700;">SOURCE MAC</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:0.8rem;color:var(--text-muted);font-weight:600;">LEARN &rarr; MAC Table</div>
+            <div style="height:16px;"></div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.82rem;color:var(--primary);font-weight:700;">DEST MAC</div>
+            <div style="color:var(--secondary);font-size:1rem;">&#8595;</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:0.8rem;color:var(--text-muted);font-weight:600;">FORWARD (or FLOOD)</div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128268; Cisco Commands</div>
+          <ul class="key-terms-list">
+            <li><code>show vlan brief</code></li>
+            <li><code>show mac address-table</code></li>
+            <li><code>show interfaces status</code></li>
+            <li><code>show interfaces trunk</code></li>
+            <li><code>show running-config</code></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-title">&#128279; Navigate</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="day4.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8592; Day 4: DNS &amp; DHCP
+            </a>
+            <a href="day6.html" style="color:var(--secondary);font-size:0.82rem;padding:10px 14px;background:var(--lightest);border-radius:var(--radius-sm);text-decoration:none;display:flex;align-items:center;gap:6px;">
+              &#8594; Day 6: VLANs &amp; Trunking
+            </a>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="logo-icon">&#9729;</span>
+          <span>The Way of <strong>Dreams</strong></span>
+        </div>
+        <p class="footer-quote">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="footer-copy">&#169; 2026 &middot; Cloud Network Engineer Learning Journal</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
